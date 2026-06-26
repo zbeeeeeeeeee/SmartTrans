@@ -2,7 +2,7 @@ import { reactive, ref } from 'vue'
 import type { UploadUserFile } from 'element-plus'
 import { ElMessage } from 'element-plus'
 import { analyze, type StageEvent } from '@/api/client'
-import { compressImage } from '@/utils/compressImage'
+import { compressImage, formatSize } from '@/utils/compressImage'
 import type { AgentStep, AccidentReportView } from '@/types'
 
 export interface StepDef {
@@ -59,7 +59,17 @@ export function useAnalysisPipeline(stepDefs: StepDef[] = DEFAULT_STEPS) {
     }
 
     // 自动压缩超过 512KB 的图片
-    const files = await Promise.all(rawFiles.map((f) => compressImage(f)))
+    const results = await Promise.all(rawFiles.map((f) => compressImage(f)))
+    const files = results.map((r) => r.file)
+
+    // 汇总压缩结果并提示
+    const compressed = results.filter((r) => r.wasCompressed)
+    if (compressed.length > 0) {
+      const originalTotal = compressed.reduce((s, r) => s + r.originalSize, 0)
+      const compressedTotal = compressed.reduce((s, r) => s + r.compressedSize, 0)
+      const label = compressed.length === 1 ? '已压缩图片' : `已压缩 ${compressed.length} 张图片`
+      ElMessage.info(`${label}: ${formatSize(originalTotal)} → ${formatSize(compressedTotal)}`)
+    }
     resetSteps()
     expandedKey.value = null
     running.value = true

@@ -1,6 +1,7 @@
 import crypto from 'node:crypto'
 import path from 'node:path'
 import { createMCPClient } from '@ai-sdk/mcp'
+import { jsonSchema } from 'ai'
 import { createLogger } from '../utils/logger'
 import { db } from '../db/index'
 import { config } from '../config'
@@ -131,12 +132,12 @@ class McpManager {
       const entry = this.clients.get(mcpId)
       if (!entry) continue
 
-      // 系统连接兜底：即使 HTTP client 未连接，也用本地工具定义
+      // 系统连接兜底：即使 stdio client 未连接，也用本地工具定义
       if (entry.config.isSystem && !entry.client && entry.toolCache) {
         for (const tool of entry.toolCache) {
           allTools[tool.name] = {
             description: tool.description,
-            inputSchema: tool.inputSchema,
+            inputSchema: jsonSchema(tool.inputSchema),
             execute: this.buildSystemToolExecutor(tool.name),
           }
         }
@@ -291,8 +292,8 @@ class McpManager {
       id: PDF_PRESET_ID,
       name: 'PDF报告生成器',
       transport: 'stdio',
-      command: 'npx',
-      args: ['tsx', 'src/mcp/pdf-server.ts'],
+      command: 'node',
+      args: ['--import', 'tsx', 'src/mcp/pdf-server.ts'],
       isSystem: true,
     })
     log.info('预置 MCP 连接已就绪 — PDF报告生成器')

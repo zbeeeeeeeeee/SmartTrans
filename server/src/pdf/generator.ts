@@ -49,25 +49,34 @@ const PREFERRED_FONTS: Record<string, string[]> = {
 }
 
 /**
- * 按优先级查找中文字体：先查系统字体，再查自定义字体目录。
+ * 按优先级查找中文字体：优先使用自定义字体目录（保证 serif/sans 变体区分），
+ * 自定义目录不存在对应字体时回退到系统字体。
  * @param preferredNames 自定义目录下偏好的文件名列表
  */
 function findFont(preferredNames: string[]): string {
-  // 1. 系统字体（用第一个命中的，不同变体在同一个 ttc 内）
-  for (const candidate of SYSTEM_FONTS) {
-    if (fs.existsSync(candidate)) return candidate
-  }
-  // 2. 自定义字体目录
+  // 1. 自定义字体目录优先（保证 serif/sans/bold 变体正确匹配）
   for (const name of preferredNames) {
     const p = path.join(config.paths.fonts, name)
-    if (fs.existsSync(p)) {
-      return p
-    }
+    if (fs.existsSync(p)) return p
+  }
+  // 2. 系统字体兜底（用第一个命中的，不同变体在同一个 ttc 内）
+  for (const candidate of SYSTEM_FONTS) {
+    if (fs.existsSync(candidate)) return candidate
   }
   throw new Error(
     `未找到可用的中文字体。请将 OTF/TTF 字体文件放入 ${config.paths.fonts}/ 目录。\n` +
     `推荐: 思源黑体 + 思源宋体 (SourceHanSansSC / SourceHanSerifSC)`,
   )
+}
+
+/** 去除 LLM 可能自动添加的编号前缀，避免与 PDF 代码中的编号重复 */
+function stripNumberingPrefix(text: string): string {
+  return text
+    .replace(/^[\s]*[（(]\s*\d+\s*[)）][\s.、．]*/, '')  // (1)、（1）、1)
+    .replace(/^[\s]*\d+\s*[.、．]\s*/, '')               // 1. / 1、/ 1．
+    .replace(/^[\s]*第[一二三四五六七八九十百千万]+\s*[条章节项款][\s.、．]*/, '') // 第一、第一条.
+    .replace(/^[\s]*[一二三四五六七八九十][、．.]\s*/, '') // 一、二、
+    .trim()
 }
 
 /**
@@ -161,7 +170,8 @@ export async function generatePdf(report: AccidentReport, outputPath: string): P
     if (report.recommendations && report.recommendations.length > 0) {
       sectionHeader(doc, '处理建议')
       report.recommendations.forEach((rec, i) => {
-        doc.font('serif').fontSize(10).fillColor('#333').text(`${i + 1}. ${rec}`, { indent: 10 })
+        const cleaned = stripNumberingPrefix(rec)
+        doc.font('serif').fontSize(10).fillColor('#333').text(`${i + 1}. ${cleaned}`, { indent: 10 })
       })
       doc.moveDown(0.6)
     }
