@@ -1,4 +1,3 @@
-import { generateObject } from 'ai'
 import { createLogger } from '../utils/logger'
 import { reasoningModel } from '../providers/index'
 import { formatLegalContext, retrieveLegalContext } from '../rag/retriever'
@@ -8,6 +7,7 @@ import {
   type SceneDescription,
   type SeverityAssessment,
 } from './schemas'
+import { generateStructured } from './helpers'
 
 const log = createLogger('liability-agent')
 
@@ -16,6 +16,7 @@ export async function analyzeLiability(
   scene: SceneDescription,
   severity: SeverityAssessment,
   description: string,
+  tools?: Record<string, any>,
 ): Promise<{ analysis: LiabilityAnalysis; legalContext: string }> {
   const query = `${scene.sceneSummary} ${description} 交通事故责任认定`
   log.info(`RAG 检索 — query: "${query.slice(0, 100)}"`)
@@ -35,9 +36,10 @@ export async function analyzeLiability(
 
   log.debug('system prompt', system.slice(0, 150))
 
-  const { object } = await generateObject({
+  const object = await generateStructured<LiabilityAnalysis>({
     model: reasoningModel,
     schema: liabilitySchema,
+    tools,
     system,
     prompt: `现场识别(JSON)：\n${JSON.stringify(scene)}\n\n严重程度(JSON)：\n${JSON.stringify(
       severity,

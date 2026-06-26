@@ -1,4 +1,3 @@
-import { generateObject } from 'ai'
 import { createLogger } from '../utils/logger'
 import { reasoningModel } from '../providers/index'
 import {
@@ -8,22 +7,27 @@ import {
   type SceneDescription,
   type SeverityAssessment,
 } from './schemas'
+import { generateStructured } from './helpers'
 
 const log = createLogger('report-agent')
 
 /** 报告生成智能体：综合各智能体结果生成结构化事故报告 */
-export async function generateReport(input: {
-  scene: SceneDescription
-  severity: SeverityAssessment
-  liability: LiabilityAnalysis
-  description: string
-}): Promise<AccidentReport> {
+export async function generateReport(
+  input: {
+    scene: SceneDescription
+    severity: SeverityAssessment
+    liability: LiabilityAnalysis
+    description: string
+  },
+  tools?: Record<string, any>,
+): Promise<AccidentReport> {
   const inputCitedCount = input.liability.citedArticles?.length ?? 0
   log.info(`开始生成报告 — 输入 citedArticles=${inputCitedCount}`)
 
-  const { object } = await generateObject({
+  const object = await generateStructured<AccidentReport>({
     model: reasoningModel,
     schema: reportSchema,
+    tools,
     system:
       '你是交通事故报告生成智能体。综合现场识别、严重程度与责任判定，生成客观、条理清晰的结构化事故分析报告，并给出处理建议。citedArticles 必须直接使用责任判定中给出的法条，严禁凭记忆编造或补充任何法条。',
     prompt: `补充描述：${input.description || '（无）'}\n\n现场识别：\n${JSON.stringify(

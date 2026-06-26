@@ -27,6 +27,7 @@ export interface ReportRow {
   liability: string
   report: string
   created_at: string
+  pdf_path: string | null
 }
 
 export interface ReportRecord {
@@ -38,6 +39,7 @@ export interface ReportRecord {
   liability: unknown
   report: unknown
   createdAt: string
+  pdfPath: string | null
 }
 
 export interface ReportSummary {
@@ -45,6 +47,7 @@ export interface ReportSummary {
   description: string
   createdAt: string
   severity: unknown
+  hasPdf: boolean
 }
 
 /** 返回当前北京时间字符串 (YYYY-MM-DD HH:MM:SS) */
@@ -62,6 +65,7 @@ function parseRow(row: ReportRow): ReportRecord {
     liability: JSON.parse(row.liability ?? 'null'),
     report: JSON.parse(row.report ?? 'null'),
     createdAt: row.created_at,
+    pdfPath: row.pdf_path ?? null,
   }
 }
 
@@ -86,15 +90,21 @@ export function insertReport(input: InsertReportInput): string {
 
 export function listReports(): ReportSummary[] {
   const rows = db
-    .prepare(`SELECT id, description, severity, created_at FROM reports ORDER BY created_at DESC`)
-    .all() as Pick<ReportRow, 'id' | 'description' | 'severity' | 'created_at'>[]
+    .prepare(`SELECT id, description, severity, created_at, pdf_path FROM reports ORDER BY created_at DESC`)
+    .all() as (Pick<ReportRow, 'id' | 'description' | 'severity' | 'created_at'> & { pdf_path: string | null })[]
   log.debug(`列出报告 — ${rows.length} 条`)
   return rows.map((r) => ({
     id: r.id,
     description: r.description,
     createdAt: r.created_at,
     severity: JSON.parse(r.severity ?? 'null'),
+    hasPdf: r.pdf_path !== null && r.pdf_path !== '',
   }))
+}
+
+export function updateReportPdfPath(id: string, pdfPath: string): void {
+  db.prepare('UPDATE reports SET pdf_path = ? WHERE id = ?').run(pdfPath, id)
+  log.info(`更新报告 PDF 路径 — id=${id}`)
 }
 
 export function getReport(id: string): ReportRecord | null {

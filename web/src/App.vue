@@ -1,10 +1,23 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, onMounted, provide } from 'vue'
 import { useRoute } from 'vue-router'
 import { Van } from '@element-plus/icons-vue'
+import { getMcpStatus } from '@/api/client'
 
 const route = useRoute()
 const active = computed(() => route.path)
+
+const mcpEnabled = ref(false)
+provide('mcpEnabled', mcpEnabled)
+
+onMounted(async () => {
+  try {
+    const status = await getMcpStatus()
+    mcpEnabled.value = status.mcpEnabled
+  } catch {
+    // 获取失败时默认隐藏
+  }
+})
 </script>
 
 <template>
@@ -18,6 +31,7 @@ const active = computed(() => route.path)
         <el-menu-item index="/">事故分析</el-menu-item>
         <el-menu-item index="/history">历史报告</el-menu-item>
         <el-menu-item index="/knowledge">法规知识库</el-menu-item>
+        <el-menu-item v-if="mcpEnabled" index="/mcp">MCP设置</el-menu-item>
       </el-menu>
     </el-header>
     <el-main>

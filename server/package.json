@@ -12,6 +12,7 @@
     "test:api": "tsx scripts/test-api.ts"
   },
   "dependencies": {
+    "@ai-sdk/mcp": "^2.0.0",
     "@ai-sdk/openai-compatible": "^2.0.51",
     "ai": "^6.0.209",
     "better-sqlite3": "^11.8.1",
@@ -19,6 +20,7 @@
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "multer": "^2.0.0",
+    "pdfkit": "^0.19.1",
     "sqlite-vec": "^0.1.6",
     "zod": "^4.4.3"
   },
@@ -28,6 +30,7 @@
     "@types/express": "^4.17.21",
     "@types/multer": "^1.4.12",
     "@types/node": "^22.10.5",
+    "@types/pdfkit": "^0.17.6",
     "tsx": "^4.19.2",
     "typescript": "^5.7.3"
   }

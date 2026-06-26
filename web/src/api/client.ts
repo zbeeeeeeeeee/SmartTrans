@@ -48,6 +48,7 @@ export interface ReportSummary {
   description: string
   createdAt: string
   severity: { level?: string } | null
+  hasPdf: boolean
 }
 
 export interface ReportRecord {
@@ -59,6 +60,7 @@ export interface ReportRecord {
   liability: unknown
   report: unknown
   createdAt: string
+  pdfPath: string | null
 }
 
 export async function listReports(): Promise<ReportSummary[]> {
@@ -162,4 +164,102 @@ export async function listKnowledgeDocuments(): Promise<UploadedDocument[]> {
 export async function deleteKnowledgeDocument(id: number): Promise<void> {
   const res = await fetch(`/api/knowledge/documents/${id}`, { method: 'DELETE' })
   if (!res.ok) throw new Error(`删除失败: HTTP ${res.status}`)
+}
+
+// ---- MCP ----
+
+export interface McpToolInfo {
+  name: string
+  description?: string
+  inputSchema?: unknown
+}
+
+export interface McpConnectionStatus {
+  id: string
+  name: string
+  transport: string
+  url?: string
+  status: 'connecting' | 'connected' | 'error' | 'stopped'
+  errorMsg?: string
+  toolCount: number
+  tools: McpToolInfo[]
+  createdAt: string
+  isSystem?: boolean
+}
+
+export interface AgentMcpSetting {
+  agentName: string
+  mcpConnectionId: string
+  enabled: boolean
+}
+
+export interface AddMcpConfig {
+  name: string
+  transport: 'http' | 'sse' | 'stdio'
+  url?: string
+  command?: string
+  args?: string[]
+  headers?: Record<string, string>
+}
+
+/** MCP 全局状态 */
+export async function getMcpStatus(): Promise<{ mcpEnabled: boolean }> {
+  return (await fetch('/api/mcp/status')).json()
+}
+
+/** 列出所有 MCP 连接 */
+export async function listMcpConnections(): Promise<McpConnectionStatus[]> {
+  return (await fetch('/api/mcp/connections')).json()
+}
+
+/** 添加 MCP 连接 */
+export async function addMcpConnection(config: AddMcpConfig): Promise<McpConnectionStatus> {
+  const res = await fetch('/api/mcp/connections', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(config),
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: `HTTP ${res.status}` }))
+    throw new Error((err as { error?: string }).error ?? `HTTP ${res.status}`)
+  }
+  return res.json()
+}
+
+/** 删除 MCP 连接 */
+export async function deleteMcpConnection(id: string): Promise<void> {
+  const res = await fetch(`/api/mcp/connections/${id}`, { method: 'DELETE' })
+  if (!res.ok) throw new Error(`删除失败: HTTP ${res.status}`)
+}
+
+/** 重连 MCP */
+export async function reconnectMcpConnection(id: string): Promise<McpConnectionStatus> {
+  const res = await fetch(`/api/mcp/connections/${id}/reconnect`, { method: 'POST' })
+  if (!res.ok) throw new Error(`重连失败: HTTP ${res.status}`)
+  return res.json()
+}
+
+/** 获取智能体 MCP 配置 */
+export async function getAgentMcpSettings(agentName?: string): Promise<AgentMcpSetting[]> {
+  const query = agentName ? `?agent=${encodeURIComponent(agentName)}` : ''
+  return (await fetch(`/api/mcp/agent-settings${query}`)).json()
+}
+
+/** 更新智能体 MCP 启用/禁用 */
+export async function updateAgentMcpSetting(
+  agentName: string,
+  mcpConnectionId: string,
+  enabled: boolean,
+): Promise<void> {
+  const res = await fetch('/api/mcp/agent-settings', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ agentName, mcpConnectionId, enabled }),
+  })
+  if (!res.ok) throw new Error(`更新失败: HTTP ${res.status}`)
+}
+
+/** 下载报告 PDF */
+export function downloadReportPdf(id: string): void {
+  window.open(`/api/reports/${id}/pdf`, '_blank')
 }

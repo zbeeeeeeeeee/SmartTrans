@@ -43,7 +43,10 @@ router.post('/documents', uploadKnowledge.single('file'), async (req, res) => {
       return
     }
 
-    log.info(`POST /documents — 收到文件: ${file.originalname}, size=${file.size}`)
+    // Windows 下 multer 对中文文件名存在 latin1 编码问题，手动修复
+    const rawName = Buffer.from(file.originalname, 'latin1').toString('utf8')
+
+    log.info(`POST /documents — 收到文件: ${rawName}, size=${file.size}`)
 
     const text = fs.readFileSync(file.path, 'utf8')
     const chunks = chunkText(text)
@@ -53,7 +56,7 @@ router.post('/documents', uploadKnowledge.single('file'), async (req, res) => {
       return
     }
 
-    const title = file.originalname.replace(/\.(md|txt|markdown)$/i, '')
+    const title = rawName.replace(/\.(md|txt|markdown)$/i, '')
     log.info(`POST /documents — 分块 ${chunks.length} 个, 开始嵌入...`)
 
     const docId = insertDocument(title, file.filename, 'upload')

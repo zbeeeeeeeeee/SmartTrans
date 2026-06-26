@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import { getReport, listReports } from '@/api/client'
+import { downloadReportPdf, getReport, listReports } from '@/api/client'
 import type { ReportRecord, ReportSummary } from '@/api/client'
 import type { AccidentReportView } from '@/types'
 import ReportCard from '@/components/ReportCard.vue'
@@ -52,9 +52,17 @@ onMounted(load)
         </el-table-column>
         <el-table-column prop="description" label="描述" show-overflow-tooltip />
         <el-table-column prop="createdAt" label="时间" width="180" />
-        <el-table-column label="操作" width="90">
+        <el-table-column label="操作" width="160">
           <template #default="{ row }">
             <el-button link type="primary" @click="open(row.id)">查看</el-button>
+            <el-button
+              v-if="row.hasPdf"
+              link
+              type="success"
+              @click="downloadReportPdf(row.id)"
+            >
+              下载PDF
+            </el-button>
           </template>
         </el-table-column>
       </el-table>

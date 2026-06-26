@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { Loading } from '@element-plus/icons-vue'
+import { inject } from 'vue'
+import { Loading, Setting } from '@element-plus/icons-vue'
 import type { Component } from 'vue'
 import type { AgentStep } from '@/types'
 import SceneCard from './SceneCard.vue'
@@ -14,7 +15,10 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'update:expandedKey': [key: string | null]
+  configureMcp: [agentKey: string]
 }>()
+
+const mcpEnabled = inject<boolean>('mcpEnabled', false)
 
 const tagType = (s: string): 'success' | 'warning' | 'danger' | 'info' =>
   s === 'finish' ? 'success' : s === 'process' ? 'warning' : s === 'error' ? 'danger' : 'info'
@@ -64,6 +68,14 @@ function toggle(key: string): void {
                 fill="currentColor"
               />
             </svg>
+          </el-icon>
+          <el-icon
+            v-if="mcpEnabled"
+            class="gear-icon"
+            title="配置 MCP 工具"
+            @click.stop="emit('configureMcp', step.key)"
+          >
+            <Setting />
           </el-icon>
         </div>
       </div>
@@ -126,6 +138,16 @@ function toggle(key: string): void {
 }
 .toggle-icon.rotated {
   transform: rotate(90deg);
+}
+.gear-icon {
+  color: var(--el-text-color-placeholder);
+  cursor: pointer;
+  transition: color 0.2s;
+  display: flex;
+  align-items: center;
+}
+.gear-icon:hover {
+  color: var(--el-color-primary);
 }
 .step-body {
   padding: 0;
