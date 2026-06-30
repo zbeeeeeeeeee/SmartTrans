@@ -1,21 +1,25 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { SceneDescription } from '@/types'
 
 const props = defineProps<{ data: SceneDescription }>()
 
-const columns = [
-  { key: 'type', label: '类型', width: '100' },
-  { key: 'color', label: '颜色', width: '80' },
-  { key: 'position', label: '位置', width: '120' },
-  { key: 'visibleDamage', label: '可见损伤', minWidth: '140' },
-]
+const { t } = useI18n()
+
+const columns = computed(() => [
+  { key: 'type', label: t('scene.type'), width: '100' },
+  { key: 'color', label: t('scene.color'), width: '80' },
+  { key: 'position', label: t('scene.position'), width: '120' },
+  { key: 'visibleDamage', label: t('scene.visibleDamage'), minWidth: '140' },
+])
 </script>
 
 <template>
   <div class="scene-card">
-    <!-- 车辆/交通参与者 -->
+    <!-- Traffic participants -->
     <div class="section">
-      <h4 class="section-title">🚗 交通参与者</h4>
+      <h4 class="section-title">{{ t('scene.participants') }}</h4>
       <el-table
         v-if="data.vehicles?.length"
         :data="data.vehicles"
@@ -33,29 +37,29 @@ const columns = [
           :min-width="col.minWidth"
         />
       </el-table>
-      <el-empty v-else description="未识别到交通参与者" :image-size="48" />
+      <el-empty v-else :description="t('scene.noVehicles')" :image-size="48" />
     </div>
 
-    <!-- 环境信息 -->
+    <!-- Environment -->
     <div class="section">
-      <h4 class="section-title">🌤 环境信息</h4>
+      <h4 class="section-title">{{ t('scene.environment') }}</h4>
       <el-descriptions :column="1" size="small" border class="env-desc">
-        <el-descriptions-item label="路面状况">
-          {{ data.roadCondition || '-' }}
+        <el-descriptions-item :label="t('scene.roadCondition')">
+          {{ data.roadCondition || t('scene.fallback') }}
         </el-descriptions-item>
-        <el-descriptions-item label="天气/光照">
-          {{ data.weather || '-' }}
+        <el-descriptions-item :label="t('scene.weatherLighting')">
+          {{ data.weather || t('scene.fallback') }}
         </el-descriptions-item>
-        <el-descriptions-item label="交通信号/标志">
-          {{ data.trafficSignals || '-' }}
+        <el-descriptions-item :label="t('scene.trafficSignals')">
+          {{ data.trafficSignals || t('scene.fallback') }}
         </el-descriptions-item>
       </el-descriptions>
     </div>
 
-    <!-- 现场总结 -->
+    <!-- Scene summary -->
     <div class="section">
-      <h4 class="section-title">📋 现场总结</h4>
-      <p class="summary-text">{{ data.sceneSummary || '-' }}</p>
+      <h4 class="section-title">{{ t('scene.summary') }}</h4>
+      <p class="summary-text">{{ data.sceneSummary || t('scene.fallback') }}</p>
     </div>
   </div>
 </template>

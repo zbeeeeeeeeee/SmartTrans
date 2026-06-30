@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import {
   listMcpConnections,
@@ -10,6 +11,8 @@ import {
 } from '@/api/client'
 
 defineOptions({ name: 'AgentMcpDialog' })
+
+const { t } = useI18n()
 
 const props = defineProps<{
   visible: boolean
@@ -48,7 +51,7 @@ async function load() {
     connections.value = conns.filter((c) => c.status === 'connected')
     settings.value = sets
   } catch {
-    ElMessage.error('加载数据失败')
+    ElMessage.error(t('mcpDialog.loadFail'))
   } finally {
     loading.value = false
   }
@@ -58,7 +61,7 @@ async function toggleMcp(mcpId: string, enabled: boolean) {
   saving.value = true
   try {
     await updateAgentMcpSetting(props.agentName, mcpId, enabled)
-    // 更新本地状态
+    // Update local state
     const existing = settings.value.find((s) => s.mcpConnectionId === mcpId)
     if (existing) {
       existing.enabled = enabled
@@ -66,7 +69,7 @@ async function toggleMcp(mcpId: string, enabled: boolean) {
       settings.value.push({ agentName: props.agentName, mcpConnectionId: mcpId, enabled })
     }
   } catch (e) {
-    ElMessage.error(e instanceof Error ? e.message : '保存失败')
+    ElMessage.error(e instanceof Error ? e.message : t('mcpDialog.saveFail'))
   } finally {
     saving.value = false
   }
@@ -80,18 +83,18 @@ watch(dialogVisible, (v) => {
 <template>
   <el-dialog
     v-model="dialogVisible"
-    :title="`${agentLabel} — MCP 工具配置`"
+    :title="t('mcpDialog.title', { label: agentLabel })"
     width="560px"
     :close-on-click-modal="false"
   >
     <div v-loading="loading">
-      <el-empty v-if="!loading && connections.length === 0" description="暂无已连接的 MCP 服务器" />
+      <el-empty v-if="!loading && connections.length === 0" :description="t('mcpDialog.noMcp')" />
       <div v-else class="mcp-list">
         <div v-for="conn in connections" :key="conn.id" class="mcp-item">
           <div class="mcp-info">
             <div class="mcp-name">{{ conn.name }}</div>
             <div class="mcp-tools">
-              工具：
+              {{ t('mcpDialog.tools') }}
               <el-tag
                 v-for="t in conn.tools"
                 :key="t.name"
@@ -102,7 +105,7 @@ watch(dialogVisible, (v) => {
               >
                 {{ t.name }}
               </el-tag>
-              <span v-if="!conn.tools.length" class="no-tools">暂无工具</span>
+              <span v-if="!conn.tools.length" class="no-tools">{{ t('mcpDialog.noTools') }}</span>
             </div>
           </div>
           <el-switch
@@ -114,7 +117,7 @@ watch(dialogVisible, (v) => {
       </div>
     </div>
     <template #footer>
-      <el-button @click="dialogVisible = false">关闭</el-button>
+      <el-button @click="dialogVisible = false">{{ t('mcpDialog.close') }}</el-button>
     </template>
   </el-dialog>
 </template>

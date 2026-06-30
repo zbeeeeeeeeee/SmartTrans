@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { Plus, UploadFilled } from '@element-plus/icons-vue'
 import {
@@ -11,6 +12,8 @@ import {
 } from '@/api/client'
 import type { KnowledgeStats, LegalChunk, UploadedDocument } from '@/api/client'
 
+const { t } = useI18n()
+
 const ALLOWED_EXT = ['md', 'txt', 'markdown']
 
 const stats = ref<KnowledgeStats>({ documents: 0, chunks: 0 })
@@ -19,7 +22,7 @@ const query = ref('')
 const results = ref<LegalChunk[]>([])
 const searching = ref(false)
 
-// ---- 上传对话框 ----
+// ---- Upload dialog ----
 const dialogVisible = ref(false)
 const dialogFile = ref<File | null>(null)
 const uploading = ref(false)
@@ -40,18 +43,18 @@ async function loadAll(): Promise<void> {
 function acceptFile(file: File): void {
   const ext = file.name.split('.').pop()?.toLowerCase()
   if (!ext || !ALLOWED_EXT.includes(ext)) {
-    ElMessage.error('仅支持 .md 和 .txt 文件')
+    ElMessage.error(t('knowledge.invalidFormat'))
     return
   }
   dialogFile.value = file
 }
 
-/** 点击拖拽区域 → 打开文件选择器 */
+/** Click drop zone → open file picker */
 function onDropZoneClick(): void {
   fileInput.value?.click()
 }
 
-/** 文件选择器 change 事件 */
+/** File input change event */
 function onInputChange(e: Event): void {
   const input = e.target as HTMLInputElement
   const file = input.files?.[0]
@@ -59,23 +62,23 @@ function onInputChange(e: Event): void {
   input.value = '' // reset so same file re-select works
 }
 
-/** 拖拽进入 */
+/** Drag enter */
 function onDragEnter(e: DragEvent): void {
   e.preventDefault()
   dragOver.value = true
 }
 
-/** 拖拽悬停 */
+/** Drag over */
 function onDragOver(e: DragEvent): void {
   e.preventDefault()
 }
 
-/** 拖拽离开 */
+/** Drag leave */
 function onDragLeave(): void {
   dragOver.value = false
 }
 
-/** 拖拽放下 */
+/** Drop */
 function onDrop(e: DragEvent): void {
   e.preventDefault()
   dragOver.value = false
@@ -98,20 +101,20 @@ async function doUpload(): Promise<void> {
     await uploadKnowledgeFileWithProgress(dialogFile.value, (pct) => {
       uploadProgress.value = pct
     })
-    ElMessage.success(`"${dialogFile.value.name}" 上传成功`)
+    ElMessage.success(t('knowledge.uploadSuccess', { name: dialogFile.value.name }))
     dialogVisible.value = false
     await loadAll()
   } catch (e) {
-    ElMessage.error(e instanceof Error ? e.message : '上传失败')
+    ElMessage.error(e instanceof Error ? e.message : t('knowledge.uploadFailed'))
   } finally {
     uploading.value = false
   }
 }
 
-async function onDelete(id: number, title: string): Promise<void> {
+async function onDelete(id: number, _title: string): Promise<void> {
   try {
     await deleteKnowledgeDocument(id)
-    ElMessage.success('已删除')
+    ElMessage.success(t('knowledge.deleted'))
     await loadAll()
   } catch {
     /* cancelled */
@@ -120,14 +123,14 @@ async function onDelete(id: number, title: string): Promise<void> {
 
 async function doSearch(): Promise<void> {
   if (!query.value.trim()) {
-    ElMessage.warning('请输入检索内容')
+    ElMessage.warning(t('knowledge.searchRequired'))
     return
   }
   searching.value = true
   try {
     results.value = await searchKnowledge(query.value)
   } catch (e) {
-    ElMessage.error(e instanceof Error ? e.message : '检索失败')
+    ElMessage.error(e instanceof Error ? e.message : t('knowledge.searchFailed'))
   } finally {
     searching.value = false
   }
@@ -138,21 +141,21 @@ onMounted(loadAll)
 
 <template>
   <div class="knowledge">
-    <!-- 统计区 -->
+    <!-- Stats -->
     <el-card shadow="never">
-      <template #header>法规知识库（RAG）</template>
+      <template #header>{{ t('knowledge.title') }}</template>
       <el-descriptions :column="2" border class="stats">
-        <el-descriptions-item label="文档数">{{ stats.documents }}</el-descriptions-item>
-        <el-descriptions-item label="分块数">{{ stats.chunks }}</el-descriptions-item>
+        <el-descriptions-item :label="t('knowledge.docCount')">{{ stats.documents }}</el-descriptions-item>
+        <el-descriptions-item :label="t('knowledge.chunkCount')">{{ stats.chunks }}</el-descriptions-item>
       </el-descriptions>
     </el-card>
 
-    <!-- 文档管理区 -->
+    <!-- Document management -->
     <el-card shadow="never" class="section">
       <template #header>
         <div class="card-head">
-          <span>文档管理</span>
-          <el-button type="primary" :icon="Plus" @click="openDialog">添加新文档</el-button>
+          <span>{{ t('knowledge.docManagement') }}</span>
+          <el-button type="primary" :icon="Plus" @click="openDialog">{{ t('knowledge.addDocument') }}</el-button>
         </div>
       </template>
       <el-alert
@@ -160,23 +163,23 @@ onMounted(loadAll)
         type="info"
         :closable="false"
         show-icon
-        title="暂无文档，请上传 .md 或 .txt 文件构建知识库"
+        :title="t('knowledge.emptyHint')"
       />
       <el-table v-if="documents.length" :data="documents" stripe>
-        <el-table-column prop="title" label="标题" min-width="180" show-overflow-tooltip />
-        <el-table-column prop="category" label="类别" width="80" />
-        <el-table-column prop="chunkCount" label="分块数" width="90" align="center" />
-        <el-table-column prop="createdAt" label="上传时间" width="170" />
-        <el-table-column label="操作" width="80" align="center">
+        <el-table-column prop="title" :label="t('knowledge.titleCol')" min-width="180" show-overflow-tooltip />
+        <el-table-column prop="category" :label="t('knowledge.category')" width="80" />
+        <el-table-column prop="chunkCount" :label="t('knowledge.chunks')" width="90" align="center" />
+        <el-table-column prop="createdAt" :label="t('knowledge.uploadTime')" width="170" />
+        <el-table-column :label="t('knowledge.actions')" width="80" align="center">
           <template #default="{ row }">
             <el-popconfirm
-              :title="`确认删除「${row.title}」？`"
-              confirm-button-text="删除"
-              cancel-button-text="取消"
+              :title="t('knowledge.confirmDelete', { title: row.title })"
+              :confirm-button-text="t('knowledge.delete')"
+              :cancel-button-text="t('knowledge.cancel')"
               @confirm="onDelete(row.id, row.title)"
             >
               <template #reference>
-                <el-button link type="danger">删除</el-button>
+                <el-button link type="danger">{{ t('knowledge.delete') }}</el-button>
               </template>
             </el-popconfirm>
           </template>
@@ -184,17 +187,17 @@ onMounted(loadAll)
       </el-table>
     </el-card>
 
-    <!-- 检索区 -->
+    <!-- Search -->
     <el-card shadow="never" class="section">
-      <template #header>语义检索</template>
+      <template #header>{{ t('knowledge.semanticSearch') }}</template>
       <div class="search">
         <el-input
           v-model="query"
-          placeholder="输入检索内容，例如：追尾 责任划分"
+          :placeholder="t('knowledge.searchPlaceholder')"
           @keyup.enter="doSearch"
         >
           <template #append>
-            <el-button :loading="searching" @click="doSearch">检索</el-button>
+            <el-button :loading="searching" @click="doSearch">{{ t('knowledge.search') }}</el-button>
           </template>
         </el-input>
       </div>
@@ -209,15 +212,15 @@ onMounted(loadAll)
       </div>
     </el-card>
 
-    <!-- 添加新文档对话框 -->
+    <!-- Add document dialog -->
     <el-dialog
       v-model="dialogVisible"
-      title="添加新文档"
+      :title="t('knowledge.addDocTitle')"
       width="480px"
       :close-on-click-modal="false"
     >
       <div class="dialog-body">
-        <!-- 拖拽 / 点击上传区域 -->
+        <!-- Drag / click upload area -->
         <div
           class="drop-zone"
           :class="{ 'drop-active': dragOver, 'has-file': !!dialogFile }"
@@ -236,25 +239,25 @@ onMounted(loadAll)
           />
           <el-icon class="drop-icon" :size="36"><UploadFilled /></el-icon>
           <div class="drop-text" v-if="!dialogFile">
-            <em>拖拽文件到此处</em> 或 <em>点击选择</em>
-            <p class="drop-hint">支持 .md / .txt 文件</p>
+            <em>{{ t('knowledge.dropText1') }}</em> {{ t('knowledge.dropText2') }} <em>{{ t('knowledge.dropText3') }}</em>
+            <p class="drop-hint">{{ t('knowledge.supportedFormats') }}</p>
           </div>
           <div class="drop-text" v-else>
             <span class="file-name">{{ dialogFile.name }}</span>
-            <p class="drop-hint">点击重新选择</p>
+            <p class="drop-hint">{{ t('knowledge.clickToReselect') }}</p>
           </div>
         </div>
 
         <div v-if="uploading" class="progress-wrap">
-          <span class="progress-label">正在上传并处理...</span>
+          <span class="progress-label">{{ t('knowledge.uploading') }}</span>
           <el-progress :percentage="uploadProgress" :stroke-width="12" />
         </div>
       </div>
 
       <template #footer>
-        <el-button @click="dialogVisible = false" :disabled="uploading">取消</el-button>
+        <el-button @click="dialogVisible = false" :disabled="uploading">{{ t('knowledge.cancel') }}</el-button>
         <el-button type="primary" :loading="uploading" :disabled="!dialogFile" @click="doUpload">
-          上传
+          {{ t('knowledge.upload') }}
         </el-button>
       </template>
     </el-dialog>
@@ -276,7 +279,7 @@ onMounted(loadAll)
   gap: 16px;
 }
 
-/* ---- 拖拽区域 ---- */
+/* ---- Drop zone ---- */
 .drop-zone {
   border: 2px dashed var(--el-border-color);
   border-radius: 8px;
@@ -315,7 +318,7 @@ onMounted(loadAll)
   color: var(--el-text-color-secondary);
 }
 
-/* ---- 进度条 ---- */
+/* ---- Progress ---- */
 .progress-wrap {
   display: flex;
   align-items: center;
@@ -330,7 +333,7 @@ onMounted(loadAll)
   flex: 1;
 }
 
-/* ---- 检索 ---- */
+/* ---- Search ---- */
 .search {
   margin-top: 8px;
 }

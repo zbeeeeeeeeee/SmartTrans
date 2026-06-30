@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import {
   listMcpConnections,
@@ -15,6 +16,8 @@ import {
 } from '@/api/client'
 
 defineOptions({ name: 'AgentSettingsDialog' })
+
+const { t } = useI18n()
 
 const props = defineProps<{
   visible: boolean
@@ -52,7 +55,7 @@ async function loadMcp() {
     connections.value = conns.filter((c) => c.status === 'connected')
     mcpSettings.value = sets
   } catch {
-    ElMessage.error('加载 MCP 数据失败')
+    ElMessage.error(t('settings.mcpLoadFail'))
   } finally {
     loadingMcp.value = false
   }
@@ -69,7 +72,7 @@ async function toggleMcp(mcpId: string, enabled: boolean) {
       mcpSettings.value.push({ agentName: props.agentName, mcpConnectionId: mcpId, enabled })
     }
   } catch (e) {
-    ElMessage.error(e instanceof Error ? e.message : '保存失败')
+    ElMessage.error(e instanceof Error ? e.message : t('settings.saveFail'))
   } finally {
     savingMcp.value = false
   }
@@ -94,11 +97,11 @@ async function loadSkills() {
       listSkills(),
       getAgentSkillSettings(props.agentName),
     ])
-    // 只显示全局启用的 skills
+    // Only show globally enabled skills
     skills.value = allSkills.filter((s) => s.enabled)
     skillSettings.value = sets.filter((s) => skills.value.some((sk) => sk.id === s.skillId))
   } catch {
-    ElMessage.error('加载 Skills 数据失败')
+    ElMessage.error(t('settings.skillsLoadFail'))
   } finally {
     loadingSkills.value = false
   }
@@ -115,7 +118,7 @@ async function toggleSkill(skillId: string, enabled: boolean) {
       skillSettings.value.push({ agentName: props.agentName, skillId, enabled })
     }
   } catch (e) {
-    ElMessage.error(e instanceof Error ? e.message : '保存失败')
+    ElMessage.error(e instanceof Error ? e.message : t('settings.saveFail'))
   } finally {
     savingSkill.value = null
   }
@@ -132,14 +135,14 @@ watch(dialogVisible, (v) => {
 <template>
   <el-dialog
     v-model="dialogVisible"
-    :title="`${agentLabel} — 工具与技能配置`"
+    :title="t('settings.title', { label: agentLabel })"
     width="580px"
     :close-on-click-modal="false"
   >
-    <!-- MCP 工具 -->
+    <!-- MCP Tools -->
     <div v-loading="loadingMcp" class="section">
-      <h4 class="section-title">MCP 工具</h4>
-      <el-empty v-if="!loadingMcp && connections.length === 0" description="暂无已连接的 MCP 服务器" />
+      <h4 class="section-title">{{ t('settings.mcpTools') }}</h4>
+      <el-empty v-if="!loadingMcp && connections.length === 0" :description="t('settings.noMcp')" />
       <div v-else class="item-list">
         <div v-for="conn in connections" :key="conn.id" class="item-row">
           <div class="item-info">
@@ -155,7 +158,7 @@ watch(dialogVisible, (v) => {
               >
                 {{ t.name }}
               </el-tag>
-              <span v-if="!conn.tools.length" class="no-items">暂无工具</span>
+              <span v-if="!conn.tools.length" class="no-items">{{ t('settings.noTools') }}</span>
             </div>
           </div>
           <el-switch
@@ -172,16 +175,16 @@ watch(dialogVisible, (v) => {
     <!-- Skills -->
     <div v-loading="loadingSkills" class="section">
       <h4 class="section-title">
-        Skills
-        <span class="section-hint">（仅显示已在技能管理中启用的 Skills）</span>
+        {{ t('settings.skills') }}
+        <span class="section-hint">{{ t('settings.skillsHint') }}</span>
       </h4>
-      <el-empty v-if="!loadingSkills && skills.length === 0" description="暂无启用的 Skills" />
+      <el-empty v-if="!loadingSkills && skills.length === 0" :description="t('settings.noSkills')" />
       <div v-else class="item-list">
         <div v-for="skill in skills" :key="skill.id" class="item-row">
           <div class="item-info">
             <div class="item-name">
               {{ skill.name }}
-              <el-tag v-if="skill.isSystem" size="small" type="info" effect="plain" class="sys-tag">系统</el-tag>
+              <el-tag v-if="skill.isSystem" size="small" type="info" effect="plain" class="sys-tag">{{ t('skills.system') }}</el-tag>
             </div>
             <div class="item-desc">{{ skill.description }}</div>
           </div>
@@ -195,7 +198,7 @@ watch(dialogVisible, (v) => {
     </div>
 
     <template #footer>
-      <el-button @click="dialogVisible = false">关闭</el-button>
+      <el-button @click="dialogVisible = false">{{ t('settings.close') }}</el-button>
     </template>
   </el-dialog>
 </template>

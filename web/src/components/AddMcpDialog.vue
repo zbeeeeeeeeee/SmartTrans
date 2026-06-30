@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { addMcpConnection, type AddMcpConfig } from '@/api/client'
 
 defineOptions({ name: 'AddMcpDialog' })
+
+const { t } = useI18n()
 
 const props = defineProps<{ visible: boolean }>()
 const emit = defineEmits<{ 'update:visible': [v: boolean]; added: [] }>()
@@ -48,15 +51,15 @@ function removeHeader(idx: number) {
 
 async function submit() {
   if (!form.value.name.trim()) {
-    ElMessage.warning('请输入 MCP 名称')
+    ElMessage.warning(t('addMcp.nameRequired'))
     return
   }
   if ((form.value.transport === 'http' || form.value.transport === 'sse') && !form.value.url.trim()) {
-    ElMessage.warning('请输入 URL')
+    ElMessage.warning(t('addMcp.urlRequired'))
     return
   }
   if (form.value.transport === 'stdio' && !form.value.command.trim()) {
-    ElMessage.warning('请输入命令')
+    ElMessage.warning(t('addMcp.commandRequired'))
     return
   }
 
@@ -78,11 +81,11 @@ async function submit() {
       headers: Object.keys(headers).length > 0 ? headers : undefined,
     }
     await addMcpConnection(cfg)
-    ElMessage.success('MCP 连接已添加')
+    ElMessage.success(t('addMcp.success'))
     dialogVisible.value = false
     emit('added')
   } catch (e) {
-    ElMessage.error(e instanceof Error ? e.message : '添加失败')
+    ElMessage.error(e instanceof Error ? e.message : t('addMcp.fail'))
   } finally {
     submitting.value = false
   }
@@ -92,44 +95,44 @@ async function submit() {
 <template>
   <el-dialog
     v-model="dialogVisible"
-    title="添加 MCP 服务器"
+    :title="t('addMcp.title')"
     width="520px"
     :close-on-click-modal="false"
   >
     <el-form label-width="80px" :model="form">
-      <el-form-item label="名称" required>
-        <el-input v-model="form.name" placeholder="如：法律知识库" />
+      <el-form-item :label="t('addMcp.name')" required>
+        <el-input v-model="form.name" :placeholder="t('addMcp.namePlaceholder')" />
       </el-form-item>
-      <el-form-item label="传输类型" required>
+      <el-form-item :label="t('addMcp.transport')" required>
         <el-select v-model="form.transport" style="width: 100%">
-          <el-option label="HTTP" value="http" />
-          <el-option label="SSE" value="sse" />
-          <el-option label="Stdio" value="stdio" />
+          <el-option :label="t('addMcp.http')" value="http" />
+          <el-option :label="t('addMcp.sse')" value="sse" />
+          <el-option :label="t('addMcp.stdio')" value="stdio" />
         </el-select>
       </el-form-item>
-      <el-form-item v-if="form.transport === 'http' || form.transport === 'sse'" label="URL" required>
-        <el-input v-model="form.url" placeholder="https://example.com/mcp" />
+      <el-form-item v-if="form.transport === 'http' || form.transport === 'sse'" :label="t('addMcp.url')" required>
+        <el-input v-model="form.url" :placeholder="t('addMcp.urlPlaceholder')" />
       </el-form-item>
-      <el-form-item v-if="form.transport === 'stdio'" label="命令" required>
-        <el-input v-model="form.command" placeholder="node" />
+      <el-form-item v-if="form.transport === 'stdio'" :label="t('addMcp.command')" required>
+        <el-input v-model="form.command" :placeholder="t('addMcp.commandPlaceholder')" />
       </el-form-item>
-      <el-form-item v-if="form.transport === 'stdio'" label="参数">
-        <el-input v-model="form.args" placeholder="server.js, --port=3001（逗号分隔）" />
+      <el-form-item v-if="form.transport === 'stdio'" :label="t('addMcp.args')">
+        <el-input v-model="form.args" :placeholder="t('addMcp.argsPlaceholder')" />
       </el-form-item>
-      <el-form-item v-if="form.transport === 'http' || form.transport === 'sse'" label="Headers">
+      <el-form-item v-if="form.transport === 'http' || form.transport === 'sse'" :label="t('addMcp.headers')">
         <div class="headers">
           <div v-for="(h, idx) in form.headers" :key="idx" class="header-row">
-            <el-input v-model="h.key" placeholder="Key" size="small" style="width: 180px" />
-            <el-input v-model="h.value" placeholder="Value" size="small" style="width: 240px" />
+            <el-input v-model="h.key" :placeholder="t('addMcp.key')" size="small" style="width: 180px" />
+            <el-input v-model="h.value" :placeholder="t('addMcp.value')" size="small" style="width: 240px" />
             <el-button size="small" type="danger" :icon="'Delete'" circle @click="removeHeader(idx)" />
           </div>
-          <el-button size="small" @click="addHeader">+ 添加 Header</el-button>
+          <el-button size="small" @click="addHeader">{{ t('addMcp.addHeader') }}</el-button>
         </div>
       </el-form-item>
     </el-form>
     <template #footer>
-      <el-button @click="dialogVisible = false">取消</el-button>
-      <el-button type="primary" :loading="submitting" @click="submit">添加</el-button>
+      <el-button @click="dialogVisible = false">{{ t('addMcp.cancel') }}</el-button>
+      <el-button type="primary" :loading="submitting" @click="submit">{{ t('addMcp.submit') }}</el-button>
     </template>
   </el-dialog>
 </template>

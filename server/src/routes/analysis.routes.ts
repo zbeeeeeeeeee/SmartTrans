@@ -4,9 +4,12 @@ import { Router } from 'express'
 import { createLogger } from '../utils/logger'
 import { runPipeline, type SkillSelection } from '../agents/orchestrator'
 import { upload } from '../middleware/upload'
+import type { SupportedLanguage } from '../i18n'
 
 const log = createLogger('route:analysis')
 const router = Router()
+
+const VALID_LANGUAGES: SupportedLanguage[] = ['en', 'zh-CN', 'zh-TW']
 
 router.post('/analyze', upload.array('images', 6), async (req, res) => {
   const files = (req.files as Express.Multer.File[] | undefined) ?? []
@@ -14,7 +17,13 @@ router.post('/analyze', upload.array('images', 6), async (req, res) => {
   const images = files.map((f) => fs.readFileSync(f.path))
   const imagePaths = files.map((f) => path.basename(f.path))
 
-  // 解析 skill 选择
+  // Extract language from form field, default to English
+  const rawLanguage = typeof req.body?.language === 'string' ? req.body.language : 'en'
+  const language: SupportedLanguage = VALID_LANGUAGES.includes(rawLanguage as SupportedLanguage)
+    ? (rawLanguage as SupportedLanguage)
+    : 'en'
+
+  // Parse skill selections
   let skillSelections: SkillSelection[] | undefined
   if (req.body?.skillSelections) {
     try {
@@ -22,11 +31,11 @@ router.post('/analyze', upload.array('images', 6), async (req, res) => {
         ? JSON.parse(req.body.skillSelections)
         : req.body.skillSelections
     } catch {
-      log.warn('skillSelections 解析失败，忽略')
+      log.warn('Failed to parse skillSelections, ignoring')
     }
   }
 
-  log.info(`POST /analyze — 图片 ${files.length} 张, 描述: "${description.slice(0, 80)}", skills: ${skillSelections?.length ?? 0}`)
+  log.info(`POST /analyze — images ${files.length}, language: ${language}, description: "${description.slice(0, 80)}", skills: ${skillSelections?.length ?? 0}`)
 
   res.setHeader('Content-Type', 'text/event-stream; charset=utf-8')
   res.setHeader('Cache-Control', 'no-cache, no-transform')
@@ -36,14 +45,14 @@ router.post('/analyze', upload.array('images', 6), async (req, res) => {
 
   const send = (data: unknown) => res.write(`data: ${JSON.stringify(data)}\n\n`)
 
-  for await (const ev of runPipeline(images, imagePaths, description, skillSelections)) {
+  for await (const ev of runPipeline(images, imagePaths, description, language, skillSelections)) {
     if (ev.type === 'error') {
-      log.error('流水线错误', ev.message)
+      log.error('Pipeline error', ev.message)
     }
     send(ev)
   }
   res.end()
-  log.info('POST /analyze — SSE 流结束')
+  log.info('POST /analyze — SSE stream ended')
 })
 
 export default router

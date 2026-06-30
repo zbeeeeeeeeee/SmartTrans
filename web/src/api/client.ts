@@ -9,18 +9,20 @@ export interface StageEvent {
   message?: string
 }
 
-/** 调用 /api/analyze（multipart），消费 SSE 流，逐阶段回调 */
+/** Call POST /api/analyze (multipart), consume SSE stream, call onEvent per stage */
 export async function analyze(
   files: File[],
   description: string,
+  language: string,
   onEvent: (e: StageEvent) => void,
 ): Promise<void> {
   const fd = new FormData()
   for (const f of files) fd.append('images', f)
   fd.append('description', description)
+  fd.append('language', language)
 
   const res = await fetch('/api/analyze', { method: 'POST', body: fd })
-  if (!res.ok || !res.body) throw new Error(`请求失败：HTTP ${res.status}`)
+  if (!res.ok || !res.body) throw new Error(`Request failed: HTTP ${res.status}`)
 
   const reader = res.body.getReader()
   const decoder = new TextDecoder()
@@ -98,7 +100,7 @@ export async function searchKnowledge(query: string, k = 5): Promise<LegalChunk[
   return res.json()
 }
 
-// ---- RAG 文档管理 ----
+// ---- RAG Document Management ----
 
 export interface UploadedDocument {
   id: number
@@ -109,7 +111,7 @@ export interface UploadedDocument {
   chunkCount: number
 }
 
-/** 上传 .md/.txt 知识库文档 */
+/** Upload .md/.txt knowledge base document */
 export async function uploadKnowledgeFile(file: File): Promise<UploadedDocument> {
   const fd = new FormData()
   fd.append('file', file)
@@ -121,7 +123,7 @@ export async function uploadKnowledgeFile(file: File): Promise<UploadedDocument>
   return res.json()
 }
 
-/** 上传 .md/.txt 知识库文档（支持进度回调） */
+/** Upload .md/.txt knowledge base document (with progress callback) */
 export function uploadKnowledgeFileWithProgress(
   file: File,
   onProgress: (percent: number) => void,
@@ -138,7 +140,7 @@ export function uploadKnowledgeFileWithProgress(
         try {
           resolve(JSON.parse(xhr.responseText))
         } catch {
-          reject(new Error('解析响应失败'))
+          reject(new Error('Failed to parse response'))
         }
       } else {
         try {
@@ -149,22 +151,22 @@ export function uploadKnowledgeFileWithProgress(
         }
       }
     })
-    xhr.addEventListener('error', () => reject(new Error('网络错误')))
+    xhr.addEventListener('error', () => reject(new Error('Network error')))
     xhr.open('POST', '/api/knowledge/documents')
     xhr.send(fd)
   })
 }
 
-/** 列出所有已上传的文档 */
+/** List all uploaded documents */
 export async function listKnowledgeDocuments(): Promise<UploadedDocument[]> {
   const res = await fetch('/api/knowledge/documents')
   return res.json()
 }
 
-/** 删除指定文档 */
+/** Delete a document */
 export async function deleteKnowledgeDocument(id: number): Promise<void> {
   const res = await fetch(`/api/knowledge/documents/${id}`, { method: 'DELETE' })
-  if (!res.ok) throw new Error(`删除失败: HTTP ${res.status}`)
+  if (!res.ok) throw new Error(`Delete failed: HTTP ${res.status}`)
 }
 
 // ---- MCP ----
@@ -203,17 +205,17 @@ export interface AddMcpConfig {
   headers?: Record<string, string>
 }
 
-/** MCP 全局状态 */
+/** MCP global status */
 export async function getMcpStatus(): Promise<{ mcpEnabled: boolean }> {
   return (await fetch('/api/mcp/status')).json()
 }
 
-/** 列出所有 MCP 连接 */
+/** List all MCP connections */
 export async function listMcpConnections(): Promise<McpConnectionStatus[]> {
   return (await fetch('/api/mcp/connections')).json()
 }
 
-/** 添加 MCP 连接 */
+/** Add MCP connection */
 export async function addMcpConnection(config: AddMcpConfig): Promise<McpConnectionStatus> {
   const res = await fetch('/api/mcp/connections', {
     method: 'POST',
@@ -227,26 +229,26 @@ export async function addMcpConnection(config: AddMcpConfig): Promise<McpConnect
   return res.json()
 }
 
-/** 删除 MCP 连接 */
+/** Delete MCP connection */
 export async function deleteMcpConnection(id: string): Promise<void> {
   const res = await fetch(`/api/mcp/connections/${id}`, { method: 'DELETE' })
-  if (!res.ok) throw new Error(`删除失败: HTTP ${res.status}`)
+  if (!res.ok) throw new Error(`Delete failed: HTTP ${res.status}`)
 }
 
-/** 重连 MCP */
+/** Reconnect MCP */
 export async function reconnectMcpConnection(id: string): Promise<McpConnectionStatus> {
   const res = await fetch(`/api/mcp/connections/${id}/reconnect`, { method: 'POST' })
-  if (!res.ok) throw new Error(`重连失败: HTTP ${res.status}`)
+  if (!res.ok) throw new Error(`Reconnect failed: HTTP ${res.status}`)
   return res.json()
 }
 
-/** 获取智能体 MCP 配置 */
+/** Get agent MCP settings */
 export async function getAgentMcpSettings(agentName?: string): Promise<AgentMcpSetting[]> {
   const query = agentName ? `?agent=${encodeURIComponent(agentName)}` : ''
   return (await fetch(`/api/mcp/agent-settings${query}`)).json()
 }
 
-/** 更新智能体 MCP 启用/禁用 */
+/** Update agent MCP enable/disable */
 export async function updateAgentMcpSetting(
   agentName: string,
   mcpConnectionId: string,
@@ -257,10 +259,10 @@ export async function updateAgentMcpSetting(
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ agentName, mcpConnectionId, enabled }),
   })
-  if (!res.ok) throw new Error(`更新失败: HTTP ${res.status}`)
+  if (!res.ok) throw new Error(`Update failed: HTTP ${res.status}`)
 }
 
-/** 下载报告 PDF */
+/** Download report PDF */
 export function downloadReportPdf(id: string): void {
   window.open(`/api/reports/${id}/pdf`, '_blank')
 }
@@ -302,17 +304,17 @@ export interface ProviderCapabilities {
   supportsNativeSkills: boolean
 }
 
-/** 列出所有 skills */
+/** List all skills */
 export async function listSkills(): Promise<SkillMeta[]> {
   return (await fetch('/api/skills')).json()
 }
 
-/** 获取单个 skill 完整内容 */
+/** Get single skill with full content */
 export async function getSkill(id: string): Promise<SkillWithContent> {
   return (await fetch(`/api/skills/${id}`)).json()
 }
 
-/** 创建 skill（multipart） */
+/** Create skill */
 export async function createSkill(skillMd: string, files?: { path: string; content: string }[]): Promise<SkillMeta> {
   const res = await fetch('/api/skills', {
     method: 'POST',
@@ -326,19 +328,19 @@ export async function createSkill(skillMd: string, files?: { path: string; conte
   return res.json()
 }
 
-/** 删除 skill */
+/** Delete skill */
 export async function deleteSkill(id: string): Promise<void> {
   const res = await fetch(`/api/skills/${id}`, { method: 'DELETE' })
-  if (!res.ok) throw new Error(`删除失败: HTTP ${res.status}`)
+  if (!res.ok) throw new Error(`Delete failed: HTTP ${res.status}`)
 }
 
-/** 获取 agent-skill 绑定 */
+/** Get agent-skill bindings */
 export async function getAgentSkillSettings(agentName?: string): Promise<AgentSkillSetting[]> {
   const query = agentName ? `?agent=${encodeURIComponent(agentName)}` : ''
   return (await fetch(`/api/skills/bindings/agent-settings${query}`)).json()
 }
 
-/** 更新 agent-skill 绑定 */
+/** Update agent-skill binding */
 export async function updateAgentSkillSetting(
   agentName: string,
   skillId: string,
@@ -349,20 +351,20 @@ export async function updateAgentSkillSetting(
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ agentName, skillId, enabled }),
   })
-  if (!res.ok) throw new Error(`更新失败: HTTP ${res.status}`)
+  if (!res.ok) throw new Error(`Update failed: HTTP ${res.status}`)
 }
 
-/** 更新 skill 全局启用/禁用 */
+/** Update skill global enable/disable */
 export async function updateSkillEnabled(id: string, enabled: boolean): Promise<void> {
   const res = await fetch(`/api/skills/${id}/enabled`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ enabled }),
   })
-  if (!res.ok) throw new Error(`更新失败: HTTP ${res.status}`)
+  if (!res.ok) throw new Error(`Update failed: HTTP ${res.status}`)
 }
 
-/** 查询 provider 是否支持 native uploadSkill */
+/** Query provider capability for native uploadSkill */
 export async function getProviderCapabilities(): Promise<ProviderCapabilities> {
   return (await fetch('/api/skills/meta/provider-capabilities')).json()
 }

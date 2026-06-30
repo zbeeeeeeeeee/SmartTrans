@@ -1,16 +1,19 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { SeverityAssessment } from '@/types'
 
 const props = defineProps<{ data: SeverityAssessment }>()
 
+const { t } = useI18n()
+
 const levelConfig = computed(() => {
   const map: Record<string, { text: string; type: 'success' | 'warning' | 'danger' }> = {
-    minor: { text: '轻微', type: 'success' },
-    moderate: { text: '一般', type: 'warning' },
-    severe: { text: '严重', type: 'danger' },
+    minor: { text: t('severity.minor'), type: 'success' },
+    moderate: { text: t('severity.moderate'), type: 'warning' },
+    severe: { text: t('severity.severe'), type: 'danger' },
   }
-  return map[props.data.level] ?? { text: '未知', type: 'danger' as const }
+  return map[props.data.level] ?? { text: t('severity.unknown'), type: 'danger' as const }
 })
 
 const confidencePercent = computed(() => Math.round(props.data.confidence * 100))
@@ -18,16 +21,16 @@ const confidencePercent = computed(() => Math.round(props.data.confidence * 100)
 
 <template>
   <div class="severity-card">
-    <!-- 严重等级 + 置信度 -->
+    <!-- Severity level + confidence -->
     <div class="level-row">
       <div class="level-tag">
-        <span class="level-label">严重等级</span>
+        <span class="level-label">{{ t('severity.level') }}</span>
         <el-tag :type="levelConfig.type" effect="dark" size="large">
           {{ levelConfig.text }}
         </el-tag>
       </div>
       <div class="confidence">
-        <span class="level-label">置信度</span>
+        <span class="level-label">{{ t('severity.confidence') }}</span>
         <el-progress
           :percentage="confidencePercent"
           :color="levelConfig.type === 'danger' ? '#f56c6c' : levelConfig.type === 'warning' ? '#e6a23c' : '#67c23a'"
@@ -36,23 +39,23 @@ const confidencePercent = computed(() => Math.round(props.data.confidence * 100)
       </div>
     </div>
 
-    <!-- 评估详情 -->
+    <!-- Detailed assessment -->
     <div class="section">
-      <h4 class="section-title">📋 详细评估</h4>
+      <h4 class="section-title">{{ t('severity.detailedAssessment') }}</h4>
       <el-descriptions :column="1" size="small" border>
-        <el-descriptions-item label="人员伤亡风险">
-          {{ data.injuryRisk || '-' }}
+        <el-descriptions-item :label="t('severity.injuryRisk')">
+          {{ data.injuryRisk || t('severity.fallback') }}
         </el-descriptions-item>
-        <el-descriptions-item label="财产损失评估">
-          {{ data.propertyDamage || '-' }}
+        <el-descriptions-item :label="t('severity.propertyDamage')">
+          {{ data.propertyDamage || t('severity.fallback') }}
         </el-descriptions-item>
       </el-descriptions>
     </div>
 
-    <!-- 评估依据 -->
+    <!-- Reasoning -->
     <div class="section">
-      <h4 class="section-title">📝 评估依据</h4>
-      <p class="reasoning-text">{{ data.reasoning || '-' }}</p>
+      <h4 class="section-title">{{ t('severity.reasoning') }}</h4>
+      <p class="reasoning-text">{{ data.reasoning || t('severity.fallback') }}</p>
     </div>
   </div>
 </template>

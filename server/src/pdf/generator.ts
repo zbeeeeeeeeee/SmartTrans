@@ -5,16 +5,12 @@ import PDFDocument from 'pdfkit'
 import type { AccidentReport } from '../agents/schemas'
 import { config } from '../config'
 import { createLogger } from '../utils/logger'
+import { PDF_LABELS } from '../i18n'
+import type { SupportedLanguage } from '../i18n'
 
 const log = createLogger('pdf-generator')
 
-const SEVERITY_LABELS: Record<string, string> = {
-  minor: '轻微',
-  moderate: '一般',
-  severe: '严重',
-}
-
-/** 常见中文字体搜索路径（系统兜底） */
+/** Common Chinese font search paths (system fallback) */
 const SYSTEM_FONTS: string[] = (() => {
   const platform = os.platform()
   if (platform === 'win32') {
@@ -40,7 +36,7 @@ const SYSTEM_FONTS: string[] = (() => {
   ]
 })()
 
-/** 自定义字体目录下偏好的文件名（按优先级） */
+/** Preferred font filenames in custom font directory (by priority) */
 const PREFERRED_FONTS: Record<string, string[]> = {
   serifBold: ['SourceHanSerifSC-Bold.otf', 'SourceHanSerifSC-Heavy.otf'],
   sansBold: ['SourceHanSansSC-Bold.otf', 'SourceHanSansSC-Heavy.otf', 'SourceHanSansSC-Medium.otf'],
@@ -49,27 +45,27 @@ const PREFERRED_FONTS: Record<string, string[]> = {
 }
 
 /**
- * 按优先级查找中文字体：优先使用自定义字体目录（保证 serif/sans 变体区分），
- * 自定义目录不存在对应字体时回退到系统字体。
- * @param preferredNames 自定义目录下偏好的文件名列表
+ * Find Chinese font by priority: custom font dir first (ensures serif/sans variant distinction),
+ * then fall back to system fonts.
+ * @param preferredNames preferred filenames in custom font directory
  */
 function findFont(preferredNames: string[]): string {
-  // 1. 自定义字体目录优先（保证 serif/sans/bold 变体正确匹配）
+  // 1. Custom font directory first (ensures correct serif/sans/bold variant matching)
   for (const name of preferredNames) {
     const p = path.join(config.paths.fonts, name)
     if (fs.existsSync(p)) return p
   }
-  // 2. 系统字体兜底（用第一个命中的，不同变体在同一个 ttc 内）
+  // 2. System font fallback (first hit, different variants are within same ttc)
   for (const candidate of SYSTEM_FONTS) {
     if (fs.existsSync(candidate)) return candidate
   }
   throw new Error(
-    `未找到可用的中文字体。请将 OTF/TTF 字体文件放入 ${config.paths.fonts}/ 目录。\n` +
-    `推荐: 思源黑体 + 思源宋体 (SourceHanSansSC / SourceHanSerifSC)`,
+    `No usable Chinese font found. Please place OTF/TTF font files in ${config.paths.fonts}/.\n` +
+    `Recommended: SourceHanSansSC + SourceHanSerifSC`,
   )
 }
 
-/** 去除 LLM 可能自动添加的编号前缀，避免与 PDF 代码中的编号重复 */
+/** Strip numbering prefixes that LLMs may auto-add, avoiding duplicate numbering in PDF */
 function stripNumberingPrefix(text: string): string {
   return text
     .replace(/^[\s]*[（(]\s*\d+\s*[)）][\s.、．]*/, '')  // (1)、（1）、1)
@@ -80,12 +76,27 @@ function stripNumberingPrefix(text: string): string {
 }
 
 /**
- * 根据事故报告 JSON 生成 PDF 并写入文件。
- * @param report 结构化事故报告
- * @param outputPath 输出 PDF 文件路径（绝对路径）
+ * Generate PDF from accident report JSON and write to file.
+ * @param report structured accident report
+ * @param outputPath output PDF file path (absolute)
+ * @param language desired language for labels and metadata
  */
-export async function generatePdf(report: AccidentReport, outputPath: string): Promise<void> {
-  // 按优先级查找四种字体变体
+export async function generatePdf(
+  report: AccidentReport,
+  outputPath: string,
+  language: SupportedLanguage = 'en',
+): Promise<void> {
+  const L = PDF_LABELS[language]
+  const severityText = L.severityLabels[report.severityLevel] ?? report.severityLevel
+
+  // Date locale mapping
+  const dateLocaleMap: Record<SupportedLanguage, string> = {
+    en: 'en-US',
+    'zh-CN': 'zh-CN',
+    'zh-TW': 'zh-TW',
+  }
+
+  // Find four font variants by priority
   const serifBoldPath = findFont(PREFERRED_FONTS.serifBold)
   const sansBoldPath = findFont(PREFERRED_FONTS.sansBold)
   const serifPath = findFont(PREFERRED_FONTS.serif)
@@ -96,30 +107,30 @@ export async function generatePdf(report: AccidentReport, outputPath: string): P
       size: 'A4',
       margins: { top: 50, bottom: 50, left: 50, right: 50 },
       info: {
-        Title: report.title || '交通事故分析报告',
-        Author: 'SmartTrans 多智能体系统',
-        Subject: '交通事故分析',
+        Title: report.title || L.title,
+        Author: L.author,
+        Subject: L.subject,
       },
     })
 
     const stream = fs.createWriteStream(outputPath)
     doc.pipe(stream)
 
-    // 注册四种中文字体
+    // Register four Chinese font variants
     doc.registerFont('serifBold', serifBoldPath)
     doc.registerFont('sansBold', sansBoldPath)
     doc.registerFont('serif', serifPath)
     doc.registerFont('sans', sansPath)
 
-    // ===== 报告大标题（宋体 Bold，18pt）=====
+    // ===== Main title (serif Bold, 18pt) =====
     doc
       .font('serifBold')
       .fontSize(18)
-      .text('交通事故分析报告', { align: 'center' })
+      .text(L.title, { align: 'center' })
 
     doc.moveDown(0.3)
 
-    // 分隔线
+    // Separator line
     const ruleY = doc.y
     doc
       .moveTo(50, ruleY)
@@ -128,47 +139,47 @@ export async function generatePdf(report: AccidentReport, outputPath: string): P
       .stroke('#2563eb')
     doc.moveDown(0.5)
 
-    // ===== 基本信息（章节标题用黑体 Bold，内容用宋体）=====
+    // ===== Basic info (section headers in sans Bold, content in serif) =====
     doc
       .font('sansBold')
       .fontSize(13)
       .fillColor('#2563eb')
-      .text('基本信息', { underline: false })
+      .text(L.basicInfo, { underline: false })
     doc.moveDown(0.3)
 
     doc.font('serif').fontSize(10).fillColor('#333')
-    doc.text(`报告标题：${report.title ?? '交通事故分析报告'}`)
-    doc.text(`生成时间：${new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })}`)
-    doc.text(`严重等级：${SEVERITY_LABELS[report.severityLevel] ?? report.severityLevel}`)
+    doc.text(`${L.reportTitleLabel}：${report.title ?? L.title}`)
+    doc.text(`${L.generatedAt}：${new Date().toLocaleString(dateLocaleMap[language], { timeZone: 'Asia/Shanghai' })}`)
+    doc.text(`${L.severityLevel}：${severityText}`)
     doc.moveDown(0.6)
 
-    // ===== 事故概要 =====
-    sectionHeader(doc, '事故概要')
-    doc.font('serif').fontSize(10).fillColor('#333').text(report.summary ?? '（无）')
+    // ===== Accident Summary =====
+    sectionHeader(doc, L.summary)
+    doc.font('serif').fontSize(10).fillColor('#333').text(report.summary ?? L.none)
     doc.moveDown(0.6)
 
-    // ===== 现场情况 =====
-    sectionHeader(doc, '现场情况')
-    doc.font('serif').fontSize(10).fillColor('#333').text(report.sceneSummary ?? '（无）')
+    // ===== Scene Situation =====
+    sectionHeader(doc, L.scene)
+    doc.font('serif').fontSize(10).fillColor('#333').text(report.sceneSummary ?? L.none)
     doc.moveDown(0.6)
 
-    // ===== 责任认定 =====
-    sectionHeader(doc, '责任认定')
-    doc.font('serif').fontSize(10).fillColor('#333').text(report.liabilityConclusion ?? '（无）')
+    // ===== Liability Determination =====
+    sectionHeader(doc, L.liabilityFinding)
+    doc.font('serif').fontSize(10).fillColor('#333').text(report.liabilityConclusion ?? L.none)
     doc.moveDown(0.6)
 
-    // ===== 引用法条 =====
+    // ===== Cited Legal Articles =====
     if (report.citedArticles && report.citedArticles.length > 0) {
-      sectionHeader(doc, '引用法条')
+      sectionHeader(doc, L.citedArticles)
       for (const article of report.citedArticles) {
         doc.font('serif').fontSize(10).fillColor('#333').text(`• ${article}`, { indent: 10 })
       }
       doc.moveDown(0.6)
     }
 
-    // ===== 处理建议 =====
+    // ===== Recommendations =====
     if (report.recommendations && report.recommendations.length > 0) {
-      sectionHeader(doc, '处理建议')
+      sectionHeader(doc, L.recommendations)
       report.recommendations.forEach((rec, i) => {
         const cleaned = stripNumberingPrefix(rec)
         doc.font('serif').fontSize(10).fillColor('#333').text(`${i + 1}. ${cleaned}`, { indent: 10 })
@@ -176,14 +187,14 @@ export async function generatePdf(report: AccidentReport, outputPath: string): P
       doc.moveDown(0.6)
     }
 
-    // ===== 页脚（黑体 Regular，小字）=====
+    // ===== Footer (sans Regular, small text) =====
     const pageH = doc.page.height
     doc
       .font('sans')
       .fontSize(8)
       .fillColor('#999')
       .text(
-        '本报告由 SmartTrans 多智能体系统自动生成，仅供参考',
+        L.footer,
         50,
         pageH - 40,
         { width: doc.page.width - 100, align: 'center' },
@@ -192,11 +203,11 @@ export async function generatePdf(report: AccidentReport, outputPath: string): P
     doc.end()
 
     stream.on('finish', () => {
-      log.info(`PDF 生成完成 — ${outputPath}`)
+      log.info(`PDF generation complete — ${outputPath}`)
       resolve()
     })
     stream.on('error', (err) => {
-      log.error('PDF 写入失败', err.message)
+      log.error('PDF write failed', err.message)
       reject(err)
     })
   })

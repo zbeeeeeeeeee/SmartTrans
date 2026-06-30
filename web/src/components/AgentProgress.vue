@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { inject } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { Loading, Setting } from '@element-plus/icons-vue'
 import type { Component } from 'vue'
 import type { AgentStep } from '@/types'
@@ -18,20 +19,23 @@ const emit = defineEmits<{
   configureAgent: [agentKey: string]
 }>()
 
+const { t } = useI18n()
 const mcpEnabled = inject<boolean>('mcpEnabled', false)
 
 const tagType = (s: string): 'success' | 'warning' | 'danger' | 'info' =>
   s === 'finish' ? 'success' : s === 'process' ? 'warning' : s === 'error' ? 'danger' : 'info'
 
-const STATUS_TEXT: Record<string, string> = {
-  wait: '等待',
-  process: '分析中',
-  finish: '完成',
-  error: '失败',
+const tagText = (s: string): string => {
+  const map: Record<string, string> = {
+    wait: t('status.waiting'),
+    process: t('status.analyzing'),
+    finish: t('status.completed'),
+    error: t('status.failed'),
+  }
+  return map[s] ?? s
 }
-const tagText = (s: string): string => STATUS_TEXT[s] ?? s
 
-/** 根据 step key 返回对应的展示组件 */
+/** Map step key to corresponding display component */
 const displayComponent = (key: string): Component | null => {
   const map: Record<string, Component> = {
     vision: SceneCard,
@@ -82,14 +86,14 @@ function toggle(key: string): void {
           <el-icon
             v-if="mcpEnabled"
             class="gear-icon"
-            title="配置 MCP 工具"
+            :title="t('configMCP')"
             @click.stop="emit('configureAgent', step.key)"
           >
             <Setting />
           </el-icon>
         </div>
       </div>
-      <!-- 展开区域：按 key 映射对应展示组件；无匹配 fallback 到 JSON -->
+      <!-- Expanded area: map key to corresponding display component -->
       <div v-if="expandedKey === step.key && step.data" class="step-body">
         <component
           v-if="displayComponent(step.key)"

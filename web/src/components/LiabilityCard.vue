@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { LiabilityAnalysis } from '@/types'
 
 const props = defineProps<{ data: LiabilityAnalysis }>()
+
+const { t } = useI18n()
 
 const faultColor = (pct: number): string => {
   if (pct >= 70) return '#f56c6c'
@@ -13,9 +15,9 @@ const faultColor = (pct: number): string => {
 
 <template>
   <div class="liability-card">
-    <!-- 当事方责任划分 -->
+    <!-- Party responsibility -->
     <div class="section">
-      <h4 class="section-title">⚖ 当事方责任划分</h4>
+      <h4 class="section-title">{{ t('liability.partiesResponsibility') }}</h4>
       <div
         v-for="(party, idx) in data.parties"
         :key="idx"
@@ -43,9 +45,9 @@ const faultColor = (pct: number): string => {
       </div>
     </div>
 
-    <!-- 引用法条 -->
+    <!-- Cited articles -->
     <div v-if="data.citedArticles?.length" class="section">
-      <h4 class="section-title">📜 引用法条</h4>
+      <h4 class="section-title">{{ t('liability.citedArticles') }}</h4>
       <el-tag
         v-for="(a, i) in data.citedArticles"
         :key="i"
@@ -57,10 +59,10 @@ const faultColor = (pct: number): string => {
       </el-tag>
     </div>
 
-    <!-- 责任结论 -->
+    <!-- Conclusion -->
     <div class="section">
-      <h4 class="section-title">✅ 责任认定结论</h4>
-      <p class="conclusion-text">{{ data.conclusion || '-' }}</p>
+      <h4 class="section-title">{{ t('liability.conclusion') }}</h4>
+      <p class="conclusion-text">{{ data.conclusion || t('liability.fallback') }}</p>
     </div>
   </div>
 </template>

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, RefreshRight } from '@element-plus/icons-vue'
 import {
@@ -13,6 +14,8 @@ import AddMcpDialog from '@/components/AddMcpDialog.vue'
 
 defineOptions({ name: 'McpSettingsView' })
 
+const { t } = useI18n()
+
 const mcpEnabled = ref(false)
 const connections = ref<McpConnectionStatus[]>([])
 const loading = ref(false)
@@ -21,8 +24,15 @@ const addDialogVisible = ref(false)
 const statusTagType = (s: string) =>
   s === 'connected' ? 'success' : s === 'error' ? 'danger' : s === 'connecting' ? 'warning' : 'info'
 
-const statusText = (s: string) =>
-  s === 'connected' ? '已连接' : s === 'error' ? '错误' : s === 'connecting' ? '连接中' : '已停止'
+const statusText = (s: string): string => {
+  const map: Record<string, string> = {
+    connected: t('mcp.connected'),
+    error: t('mcp.error'),
+    connecting: t('mcp.connecting'),
+    stopped: t('mcp.stopped'),
+  }
+  return map[s] ?? s
+}
 
 async function load() {
   loading.value = true
@@ -30,8 +40,8 @@ async function load() {
     const [status, list] = await Promise.all([getMcpStatus(), listMcpConnections()])
     mcpEnabled.value = status.mcpEnabled
     connections.value = list
-  } catch (e) {
-    ElMessage.error('加载 MCP 配置失败')
+  } catch {
+    ElMessage.error(t('mcp.loadFailed'))
   } finally {
     loading.value = false
   }
@@ -39,11 +49,13 @@ async function load() {
 
 async function handleDelete(row: any) {
   try {
-    await ElMessageBox.confirm(`确定删除 MCP 连接「${row.name}」？`, '确认删除', {
-      type: 'warning',
-    })
+    await ElMessageBox.confirm(
+      t('mcp.confirmDelete', { name: row.name }),
+      t('mcp.confirmTitle'),
+      { type: 'warning' },
+    )
     await deleteMcpConnection(row.id)
-    ElMessage.success('已删除')
+    ElMessage.success(t('mcp.deleted'))
     await load()
   } catch {
     // cancelled
@@ -55,9 +67,9 @@ async function handleReconnect(row: any) {
     const updated = await reconnectMcpConnection(row.id)
     const idx = connections.value.findIndex((c) => c.id === row.id)
     if (idx >= 0) connections.value[idx] = updated
-    ElMessage.success('重连成功')
+    ElMessage.success(t('mcp.reconnectSuccess'))
   } catch (e) {
-    ElMessage.error(e instanceof Error ? e.message : '重连失败')
+    ElMessage.error(e instanceof Error ? e.message : t('mcp.reconnectFailed'))
   }
 }
 
@@ -68,8 +80,8 @@ onMounted(load)
   <div class="mcp-settings">
     <el-alert
       v-if="!mcpEnabled"
-      title="MCP 功能未启用"
-      description="请在服务端 .env 中设置 MCP_ENABLED=true 以启用 MCP 功能。"
+      :title="t('mcp.disabled')"
+      :description="t('mcp.disabledHint')"
       type="info"
       show-icon
       :closable="false"
@@ -79,37 +91,37 @@ onMounted(load)
       <el-card shadow="never">
         <template #header>
           <div class="card-header">
-            <span>MCP 连接管理</span>
+            <span>{{ t('mcp.connectionManagement') }}</span>
             <el-button type="primary" :icon="Plus" @click="addDialogVisible = true">
-              添加 MCP 服务器
+              {{ t('mcp.addServer') }}
             </el-button>
           </div>
         </template>
 
         <el-table :data="connections" v-loading="loading" stripe>
-          <el-table-column prop="name" label="名称" min-width="180">
+          <el-table-column prop="name" :label="t('mcp.name')" min-width="180">
             <template #default="{ row }">
               {{ row.name }}
               <el-tag v-if="row.isSystem" size="small" type="info" effect="plain" style="margin-left:6px">
-                系统
+                {{ t('mcp.system') }}
               </el-tag>
             </template>
           </el-table-column>
-          <el-table-column prop="transport" label="传输类型" width="90" />
-          <el-table-column prop="url" label="地址" min-width="200">
+          <el-table-column prop="transport" :label="t('mcp.transport')" width="90" />
+          <el-table-column prop="url" :label="t('mcp.address')" min-width="200">
             <template #default="{ row }">
               {{ row.url || row.transport === 'stdio' ? 'stdio' : '-' }}
             </template>
           </el-table-column>
-          <el-table-column label="状态" width="100">
+          <el-table-column :label="t('mcp.status')" width="100">
             <template #default="{ row }">
               <el-tag :type="statusTagType(row.status)" size="small" effect="light">
                 {{ statusText(row.status) }}
               </el-tag>
             </template>
           </el-table-column>
-          <el-table-column prop="toolCount" label="工具数" width="80" align="center" />
-          <el-table-column label="操作" width="160">
+          <el-table-column prop="toolCount" :label="t('mcp.toolCount')" width="80" align="center" />
+          <el-table-column :label="t('mcp.actions')" width="160">
             <template #default="{ row }">
               <el-button
                 v-if="row.status === 'error' || row.status === 'stopped'"
@@ -117,14 +129,16 @@ onMounted(load)
                 :icon="RefreshRight"
                 @click="handleReconnect(row)"
               >
-                重连
+                {{ t('mcp.reconnect') }}
               </el-button>
-              <el-button v-if="!row.isSystem" size="small" type="danger" @click="handleDelete(row)">删除</el-button>
+              <el-button v-if="!row.isSystem" size="small" type="danger" @click="handleDelete(row)">
+                {{ t('mcp.delete') }}
+              </el-button>
             </template>
           </el-table-column>
         </el-table>
 
-        <el-empty v-if="!loading && connections.length === 0" description="暂无 MCP 连接" />
+        <el-empty v-if="!loading && connections.length === 0" :description="t('mcp.empty')" />
       </el-card>
     </template>
 
