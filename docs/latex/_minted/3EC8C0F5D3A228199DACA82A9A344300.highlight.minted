@@ -1,0 +1,9 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{n+nn}{\PYGZhy{}\PYGZhy{}\PYGZhy{}}
+\PYG{n+nt}{name}\PYG{p}{:}\PYG{+w}{ }\PYG{l+lScalar+lScalarPlain}{severity\PYGZhy{}checklist}
+\PYG{n+nt}{description}\PYG{p}{:}\PYG{+w}{ }\PYG{p+pIndicator}{|}
+\PYG{+w}{  }\PYG{n+no}{A structured checklist for comprehensive severity assessment,}
+\PYG{+w}{  }\PYG{n+no}{covering vehicle damage grades, injury classification,}
+\PYG{+w}{  }\PYG{n+no}{and environmental hazard evaluation.}
+\PYG{n+nn}{\PYGZhy{}\PYGZhy{}\PYGZhy{}}
+\end{MintedVerbatim}
