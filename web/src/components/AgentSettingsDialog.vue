@@ -37,6 +37,7 @@ const connections = ref<McpConnectionStatus[]>([])
 const mcpSettings = ref<AgentMcpSetting[]>([])
 const loadingMcp = ref(false)
 const savingMcp = ref(false)
+const expandedTools = ref<Record<string, boolean>>({})
 
 const mcpEnabledMap = computed(() => {
   const map: Record<string, boolean> = {}
@@ -149,19 +150,25 @@ watch(dialogVisible, (v) => {
         <div v-for="conn in connections" :key="conn.id" class="item-row">
           <div class="item-info">
             <div class="item-name">{{ conn.name }}</div>
-            <div class="item-tags">
-              <el-tag
-                v-for="t in conn.tools"
-                :key="t.name"
-                size="small"
-                type="info"
-                effect="plain"
-                class="tag"
-              >
-                {{ t.name }}
-              </el-tag>
-              <span v-if="!conn.tools.length" class="no-items">{{ t('settings.noTools') }}</span>
+            <div v-if="conn.tools.length" class="item-tools">
+              <span class="tools-toggle" @click="expandedTools[conn.id] = !expandedTools[conn.id]">
+                {{ conn.tools.length }} 个工具
+                <span class="toggle-arrow">{{ expandedTools[conn.id] ? '▾' : '▸' }}</span>
+              </span>
+              <div v-if="expandedTools[conn.id]" class="tools-scroll">
+                <el-tag
+                  v-for="tool in conn.tools"
+                  :key="tool.name"
+                  size="small"
+                  type="info"
+                  effect="plain"
+                  class="tag"
+                >
+                  {{ tool.name }}
+                </el-tag>
+              </div>
             </div>
+            <span v-else class="no-items">{{ t('settings.noTools') }}</span>
           </div>
           <el-switch
             :model-value="mcpEnabledMap[conn.id]"
@@ -251,10 +258,31 @@ watch(dialogVisible, (v) => {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.item-tags {
+.item-tools {
   font-size: 12px;
-  color: var(--el-text-color-secondary);
-  line-height: 1.6;
+}
+.tools-toggle {
+  color: var(--el-color-primary);
+  cursor: pointer;
+  user-select: none;
+  padding: 1px 0;
+}
+.tools-toggle:hover {
+  text-decoration: underline;
+}
+.toggle-arrow {
+  font-size: 10px;
+  margin-left: 2px;
+}
+.tools-scroll {
+  max-height: 120px;
+  overflow-y: auto;
+  line-height: 1.8;
+  margin-top: 4px;
+  padding: 4px 6px;
+  background: var(--el-fill-color);
+  border-radius: 4px;
+  border: 1px solid var(--el-border-color-lighter);
 }
 .tag {
   margin: 0 4px 2px 0;

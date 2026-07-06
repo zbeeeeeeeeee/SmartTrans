@@ -73,16 +73,27 @@ function toggle(key: string): void {
           >
             {{ sn }}
           </el-tag>
-          <el-tag
-            v-for="tn in step.toolNames"
-            :key="tn"
-            size="small"
-            type="primary"
-            effect="plain"
-            class="tool-tag"
+          <el-tooltip
+            v-if="(step.toolNames?.length ?? 0) > 2"
+            placement="top"
+            :content="(step.toolNames ?? []).join(', ')"
           >
-            {{ tn }}
-          </el-tag>
+            <el-tag size="small" type="primary" effect="plain" class="tool-tag">
+              +{{ step.toolNames!.length }} tools
+            </el-tag>
+          </el-tooltip>
+          <template v-else>
+            <el-tag
+              v-for="tn in step.toolNames"
+              :key="tn"
+              size="small"
+              type="primary"
+              effect="plain"
+              class="tool-tag"
+            >
+              {{ tn }}
+            </el-tag>
+          </template>
           <span
             v-if="(!step.skillNames || step.skillNames.length === 0) && (!step.toolNames || step.toolNames.length === 0) && step.status !== 'wait'"
             class="no-skills-hint"

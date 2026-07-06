@@ -415,6 +415,16 @@ class McpManager {
       isSystem: true,
     })
     log.info('预置 MCP 连接已就绪 — PDF报告生成器')
+
+    const AMAP_PRESET_ID = 'system-amap-maps'
+    seedPresetConnection({
+      id: AMAP_PRESET_ID,
+      name: '高德地图',
+      transport: 'http',
+      url: 'https://mcp.amap.com/mcp?key=44226cf881957e1da5b0775b2a02b03c',
+      isSystem: true,
+    })
+    log.info('预置 MCP 连接已就绪 — 高德地图')
   }
 }
 

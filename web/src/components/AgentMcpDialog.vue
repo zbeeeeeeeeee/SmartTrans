@@ -29,6 +29,7 @@ const connections = ref<McpConnectionStatus[]>([])
 const settings = ref<AgentMcpSetting[]>([])
 const loading = ref(false)
 const saving = ref(false)
+const expandedTools = ref<Record<string, boolean>>({})
 
 const enabledMap = computed(() => {
   const map: Record<string, boolean> = {}
@@ -93,20 +94,25 @@ watch(dialogVisible, (v) => {
         <div v-for="conn in connections" :key="conn.id" class="mcp-item">
           <div class="mcp-info">
             <div class="mcp-name">{{ conn.name }}</div>
-            <div class="mcp-tools">
-              {{ t('mcpDialog.tools') }}
-              <el-tag
-                v-for="t in conn.tools"
-                :key="t.name"
-                size="small"
-                type="info"
-                effect="plain"
-                class="tool-tag"
-              >
-                {{ t.name }}
-              </el-tag>
-              <span v-if="!conn.tools.length" class="no-tools">{{ t('mcpDialog.noTools') }}</span>
+            <div v-if="conn.tools.length" class="mcp-tools">
+              <span class="tools-toggle" @click="expandedTools[conn.id] = !expandedTools[conn.id]">
+                {{ conn.tools.length }} 个工具
+                <span class="toggle-arrow">{{ expandedTools[conn.id] ? '▾' : '▸' }}</span>
+              </span>
+              <div v-if="expandedTools[conn.id]" class="tools-scroll">
+                <el-tag
+                  v-for="t in conn.tools"
+                  :key="t.name"
+                  size="small"
+                  type="info"
+                  effect="plain"
+                  class="tool-tag"
+                >
+                  {{ t.name }}
+                </el-tag>
+              </div>
             </div>
+            <span v-else class="no-tools">{{ t('mcpDialog.noTools') }}</span>
           </div>
           <el-switch
             :model-value="enabledMap[conn.id]"
@@ -148,8 +154,28 @@ watch(dialogVisible, (v) => {
 }
 .mcp-tools {
   font-size: 12px;
-  color: var(--el-text-color-secondary);
-  line-height: 1.6;
+}
+.tools-toggle {
+  color: var(--el-color-primary);
+  cursor: pointer;
+  user-select: none;
+}
+.tools-toggle:hover {
+  text-decoration: underline;
+}
+.toggle-arrow {
+  font-size: 10px;
+  margin-left: 2px;
+}
+.tools-scroll {
+  max-height: 120px;
+  overflow-y: auto;
+  line-height: 1.8;
+  margin-top: 4px;
+  padding: 4px 6px;
+  background: var(--el-fill-color);
+  border-radius: 4px;
+  border: 1px solid var(--el-border-color-lighter);
 }
 .tool-tag {
   margin: 0 4px 2px 0;

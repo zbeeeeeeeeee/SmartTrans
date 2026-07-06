@@ -14,17 +14,21 @@ function parseBool(val: string | undefined, fallback: boolean): boolean {
   return v === 'true' || v === '1' || v === 'yes' || v === 'on'
 }
 
+const dataDir = process.env.DATA_DIR
+  ? path.resolve(process.env.DATA_DIR)
+  : path.join(serverRoot, 'data')
+
 export const config = {
   port: Number(process.env.PORT ?? 28123),
   paths: {
     serverRoot,
-    data: path.join(serverRoot, 'data'),
-    uploads: path.join(serverRoot, 'data', 'uploads'),
-    knowledge: path.join(serverRoot, 'data', 'knowledge'),
-    pdfs: path.join(serverRoot, 'data', 'pdfs'),
-    fonts: path.join(serverRoot, 'data', 'fonts'),
-    skills: path.join(serverRoot, 'data', 'skills'),
-    db: path.join(serverRoot, 'data', 'app.db'),
+    data: dataDir,
+    uploads: path.join(dataDir, 'uploads'),
+    knowledge: path.join(dataDir, 'knowledge'),
+    pdfs: path.join(dataDir, 'pdfs'),
+    fonts: path.join(dataDir, 'fonts'),
+    skills: path.join(dataDir, 'skills'),
+    db: path.join(dataDir, 'app.db'),
   },
   vision: {
     apiKey: process.env.QWEN_API_KEY ?? '',
