@@ -1,0 +1,579 @@
+% !TEX program = xelatex
+% SmartTrans User Guide — LaTeX Edition
+% Compile: xelatex -shell-escape USER-GUIDE.tex (twice for TOC)
+
+\documentclass[
+  paper=a4,
+  fontsize=10pt,
+  DIV=14,
+  headings=normal,
+  headsepline=true,
+  parskip=half,
+]{scrartcl}
+
+% ── Packages ──────────────────────────────────────────────────
+\usepackage{fontspec}
+\usepackage{geometry}
+\geometry{left=1.8cm, right=1.8cm, top=2cm, bottom=2cm}
+
+\usepackage[svgnames, table]{xcolor}
+\usepackage[many, skins, breakable, listings]{tcolorbox}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{longtable}
+\usepackage{minted}
+\usepackage{listings}
+\usepackage[hidelinks]{hyperref}
+\usepackage{graphicx}
+\usepackage{enumitem}
+\usepackage{setspace}
+\usepackage{fancyhdr}
+\usepackage{caption}
+\usepackage{needspace}
+\usepackage{lastpage}
+
+% ── Fonts ──────────────────────────────────────────────────────
+\setmainfont{Latin Modern Roman}
+\setsansfont{Noto Sans}
+\setmonofont{DejaVu Sans Mono}
+\newfontfamily{\cjkfont}{FandolHei}
+
+% ── Colors (Element Plus palette) ─────────────────────────────
+\definecolor{primary}{HTML}{409EFF}
+\definecolor{success}{HTML}{67C23A}
+\definecolor{warning}{HTML}{E6A23C}
+\definecolor{danger}{HTML}{F56C6C}
+\definecolor{info}{HTML}{909399}
+
+\definecolor{insightbg}{HTML}{F0F7FF}
+\definecolor{insightborder}{HTML}{409EFF}
+\definecolor{codebg}{HTML}{F5F7FA}
+\definecolor{tablehead}{HTML}{ECF5FF}
+
+\addtokomafont{section}{\color{primary}}
+\addtokomafont{subsection}{\color{primary!80!black}}
+
+% ── Environments & Commands ────────────────────────────────────
+\newtcolorbox{insightbox}{
+  colback=insightbg, colframe=insightborder,
+  leftrule=4pt, rightrule=0pt, toprule=0pt, bottomrule=0pt,
+  arc=0pt, outer arc=0pt,
+  before skip=12pt, after skip=12pt,
+  left=12pt, right=12pt, top=8pt, bottom=8pt,
+  breakable, fontupper=\small,
+}
+
+\newtcolorbox{tipbox}{
+  colback=warning!8, colframe=warning!50,
+  leftrule=3pt, rightrule=0pt, toprule=0pt, bottomrule=0pt,
+  arc=2pt, outer arc=2pt,
+  before skip=10pt, after skip=10pt,
+  left=10pt, right=10pt, top=6pt, bottom=6pt,
+  breakable, fontupper=\small,
+}
+
+\newtcolorbox{quotebox}{
+  colback=black!3, colframe=black!20,
+  leftrule=3pt, rightrule=0pt, toprule=0pt, bottomrule=0pt,
+  arc=0pt, outer arc=0pt,
+  before skip=10pt, after skip=10pt,
+  left=12pt, right=12pt, top=6pt, bottom=6pt,
+  breakable, fontupper=\itshape\small,
+}
+
+\newcommand{\code}[1]{\lstinline[basicstyle=\ttfamily\small,breaklines=false]|#1|}
+
+\newcommand{\eltaginfo}[1]{\tcbox[on line,size=small,colback=info!15,colframe=info,boxrule=0.5pt,arc=2pt,left=3pt,right=3pt,top=0.5pt,bottom=0.5pt]{\small\textcolor{info!80!black}{#1}}}
+\newcommand{\eltagwarning}[1]{\tcbox[on line,size=small,colback=warning!15,colframe=warning,boxrule=0.5pt,arc=2pt,left=3pt,right=3pt,top=0.5pt,bottom=0.5pt]{\small\textcolor{warning!80!black}{#1}}}
+
+\newcommand{\screenshot}[2][0.8\textwidth]{%
+  \IfFileExists{../images/#2}{%
+    \begin{center}\includegraphics[width=#1,keepaspectratio]{../images/#2}\end{center}
+  }{%
+    \begin{center}\fbox{\parbox{0.6\textwidth}{\centering\small\ttfamily Image: #2}}\end{center}
+  }%
+}
+
+\newcolumntype{L}{>{\raggedright\arraybackslash}X}
+\newcolumntype{P}[1]{>{\raggedright\arraybackslash}p{#1}}
+
+\graphicspath{{../images/}}
+
+% ── Lists ──────────────────────────────────────────────────────
+\setlist{nosep, leftmargin=*}
+\setlist[itemize]{label={\textendash}}
+\setlist[enumerate]{label=\arabic*., leftmargin=*}
+
+% ── Headers / Footers ─────────────────────────────────────────
+\fancyhf{}
+\fancyhead[L]{\small\color{info}\leftmark}
+\fancyhead[R]{\small\color{info}SmartTrans User Guide}
+\fancyfoot[C]{\small\color{info}\thepage\ / \pageref*{LastPage}}
+\renewcommand{\headrulewidth}{0.4pt}
+\pagestyle{fancy}
+
+\setstretch{1.05}
+
+\title{SmartTrans User Guide}
+\subtitle{A demonstration platform that uses AI-powered traffic accident analysis\\
+to make five foundational concepts of enterprise AI tangible and experiential.}
+\date{\today}
+\author{}
+
+\begin{document}
+
+\maketitle
+\tableofcontents
+\newpage
+
+% ── Executive Summary ─────────────────────────────────────────
+\section{Executive Summary}
+
+SmartTrans illustrates five concepts that together define the modern AI agent stack:
+
+\medskip
+\begin{tabularx}{\textwidth}{@{} l L @{}}
+\toprule
+\rowcolor{tablehead}
+\textbf{Concept} & \textbf{The Question It Answers} \\
+\midrule
+\textbf{Prompt}  & How do you give an AI a professional identity — so it says the \emph{right} thing? \\
+\textbf{Agent}   & How do you combine role, knowledge, and tools into a digital specialist that completes tasks? \\
+\textbf{RAG}     & How do you give an AI access to authoritative reference documents — so it cites facts, not memories? \\
+\textbf{MCP}     & How do you equip an AI with tools — so it executes actions, not just offers advice? \\
+\textbf{Skills}  & How do you make AI expertise modular — so domain experts can evolve capabilities without engineering? \\
+\bottomrule
+\end{tabularx}
+\medskip
+
+These five form a capability stack: \textbf{Prompts} define identity → \textbf{Agents} wrap identity, knowledge, and tools → \textbf{RAG} provides authoritative knowledge → \textbf{MCP} delivers executable tools → \textbf{Skills} make expertise swappable.
+
+% ── Core Concepts at a Glance ──────────────────────────────────
+\section{Core Concepts at a Glance}
+
+{\small
+\begin{tabularx}{\textwidth}{@{} l L @{}}
+\toprule
+\rowcolor{tablehead}
+\textbf{Concept} & \textbf{One-Line Understanding} \\
+\midrule
+\textbf{Prompt}            & A ``professional contract'' — defines which path the AI \emph{should} take \\
+\textbf{Agent}             & Role + knowledge + tools = a digital specialist that completes tasks \\
+\textbf{Structured Output} & Verifiable, auditable data structures instead of free-form text \\
+\textbf{RAG}               & A reference library — look up facts rather than rely on training memory \\
+\textbf{Vector Embedding}  & Making semantics computable — turning meaning into measurable math \\
+\textbf{Tool Calling}      & AI autonomously decides when and which tool to invoke \\
+\textbf{MCP}               & A universal protocol for tool integration — one standard, any service \\
+\textbf{Skill}             & Modular expertise package — upgrade capabilities without code changes \\
+\bottomrule
+\end{tabularx}
+}
+
+% ── 1. Prompt ──────────────────────────────────────────────────
+\section{Prompt — The Professional Contract}
+
+\textbf{The core question}: How do you make an AI go from ``chatting'' to ``being professional''?
+
+\subsection{Experience the Pipeline}
+
+\begin{enumerate}
+  \item Open the system. Confirm you are on the \textbf{Accident Analysis} tab (denoted \cjkfont「\cjkfont」 in the UI).
+  \item In the left panel \textbf{Case Information} area:
+    \begin{itemize}
+      \item Click \code{+} to upload traffic accident scene images.
+      \item Fill in the \textbf{Text Description} field, for example:
+    \end{itemize}
+    \begin{quotebox}
+      At 3:00 PM on June 15, 2024, at a major urban intersection, Vehicle A traveling straight collided with Vehicle B making a left turn. Weather was clear, road surface was dry.
+    \end{quotebox}
+    \begin{itemize}
+      \item Click \textbf{Start Analysis}.
+    \end{itemize}
+  \item Watch the pipeline execute in the right panel and wait for the report.
+\end{enumerate}
+
+\begin{tipbox}
+  \textbf{Tip:} The language switcher in the top-right corner lets you choose English, Simplified Chinese, or Traditional Chinese. The entire pipeline operates in your selected language.
+\end{tipbox}
+
+\screenshot{image-01.png}
+
+\subsection{The Multi-Agent Architecture}
+
+The system decomposes analysis into a relay of four \textbf{specialized agents}:
+
+\medskip
+\begin{tabularx}{\textwidth}{@{} c l L @{}}
+\toprule
+\rowcolor{tablehead}
+\textbf{Stage} & \textbf{Agent} & \textbf{Responsibility} \\
+\midrule
+① & Vision Agent    & Understand the visual information of the accident scene \\
+② & Severity Agent  & Assess accident severity level and damage risks \\
+③ & Liability Agent & Determine fault percentages and cite legal references \\
+④ & Report Agent    & Synthesize all analyses into a decision-support report \\
+\bottomrule
+\end{tabularx}
+\medskip
+
+Status indicators update in real time: \code{Waiting} → \code{Analyzing} → \code{Complete}. Output of one stage is input to the next.
+
+\subsection{Why Prompts Matter}
+
+Three of the four agents (Severity, Liability, Report) are powered by the \textbf{same underlying AI model} (DeepSeek-V4). Yet they behave as entirely different specialists. The difference is entirely in their prompts.
+
+Consider the same accident photo shown to different observers:
+\begin{itemize}
+  \item Traffic officer → focuses on liability-relevant details.
+  \item Insurance adjuster → focuses on loss-relevant details.
+  \item Bystander → just sees ``two cars crashed.''
+\end{itemize}
+
+\begin{insightbox}
+  \textbf{Core Insight:} A prompt is a ``professional contract.'' One model can serve dozens of business functions — each defined by its prompt, not its architecture.
+\end{insightbox}
+
+\subsection{Why Multi-Agent}
+
+A single AI handling everything leads to \textbf{attention dilution} — switching between vision, assessment, and legal reasoning. Multi-agent is \textbf{cognitive division of labor}: each agent has one responsibility, communicates through structured output, and deviations are localized.
+
+\subsection{Structured Output: The Dependable Interface}
+
+Every agent's output is a \textbf{rigorously constrained data structure} — not free-form text. Structured data can be validated, transmitted, and audited. It is the dependable interface between agents.
+
+\screenshot{image-02.png}
+
+% ── 2. Agent ───────────────────────────────────────────────────
+\section{Agent — The Digital Specialist}
+
+\textbf{The core question}: What exactly \emph{is} an Agent, and how does it differ from a chatbot?
+
+\subsection{What Defines an Agent}
+
+\medskip
+\begin{tabularx}{\textwidth}{@{} l l L @{}}
+\toprule
+\rowcolor{tablehead}
+\textbf{Element} & \textbf{Provided By} & \textbf{What It Does} \\
+\midrule
+\textbf{Role}      & Prompt            & Defines professional identity, scope, and methodology \\
+\textbf{Knowledge} & Training data + RAG & Access to facts — trained and retrievable \\
+\textbf{Tools}     & MCP               & Ability to act — generate files, query services, call APIs \\
+\bottomrule
+\end{tabularx}
+\medskip
+
+An agent is a \textbf{digital specialist}: defined scope + reference materials + ability to act. It executes tasks end-to-end, not just responds to prompts.
+
+\subsection{Agent vs.\ Chatbot}
+
+\medskip
+{\small
+\begin{tabularx}{\textwidth}{@{} l L L @{}}
+\toprule
+\rowcolor{tablehead}
+\textbf{Dimension} & \textbf{Chatbot} & \textbf{Agent} \\
+\midrule
+\textbf{Mode}          & Answers questions     & Completes tasks \\
+\textbf{State}         & Stateless             & Stateful — carries context through multi-step process \\
+\textbf{Output}        & Free-form text        & Structured, validated data \\
+\textbf{Capability}    & Text generation only  & Tool-equipped — retrieve, compute, generate, call APIs \\
+\textbf{Reasoning}     & Single-turn           & Multi-step, autonomous tool-use decisions \\
+\textbf{Accountability} & Output unverifiable  & Output validated against schema \\
+\bottomrule
+\end{tabularx}
+}
+\medskip
+
+A chatbot tells you what you \emph{should} do. An agent \emph{does} it.
+
+\subsection{The Four Agents of SmartTrans}
+
+\medskip
+{\small
+\begin{tabularx}{\textwidth}{@{} l L L L @{}}
+\toprule
+\rowcolor{tablehead}
+\textbf{Agent} & \textbf{Model} & \textbf{Prompt Defines\ldots} & \textbf{Tools Include\ldots} \\
+\midrule
+\textbf{Vision Agent}    & Qwen3-VL (vision)      & How to observe accident scenes   & — (pure perception) \\
+\textbf{Severity Agent}  & DeepSeek-V4 (reasoning) & How to classify damage and risk  & RAG legal references \\
+\textbf{Liability Agent} & DeepSeek-V4 (reasoning) & How to determine fault, cite law & RAG legal references \\
+\textbf{Report Agent}    & DeepSeek-V4 (reasoning) & How to synthesize into a report  & PDF generation, map geocoding \\
+\bottomrule
+\end{tabularx}
+}
+\medskip
+
+The pipeline is a \textbf{data relay}, not a conversation.
+
+\begin{insightbox}
+  \textbf{Core Insight:} An agent transforms a general-purpose model into a reliable, auditable, tool-equipped digital worker that plugs into business processes.
+\end{insightbox}
+
+% ── 3. RAG ─────────────────────────────────────────────────────
+\section{RAG — The Knowledge Foundation}
+
+\textbf{The core question}: What gives an AI the authority to say ``according to relevant laws''?
+
+\subsection{Experience It}
+
+\begin{enumerate}
+  \item Switch to the \textbf{Knowledge Base} tab.
+  \item Upload documents: Click \textbf{Add Document} → drag a \code{.md} or \code{.txt} file → click \textbf{Upload}.
+\end{enumerate}
+
+\screenshot[0.5\textwidth]{image-03.png}
+
+\begin{enumerate}[resume]
+  \item Try \textbf{semantic search}: enter \code{rear-end collision liability determination} → click \textbf{Search}. Observe \textbf{distance scores} — they measure semantic closeness.
+\end{enumerate}
+
+\screenshot{image-04.png}
+
+\begin{enumerate}[resume]
+  \item Return to \textbf{Accident Analysis}, re-run, and compare Liability output — before and after having a knowledge base.
+\end{enumerate}
+
+\subsection{What Changed}
+
+Without a knowledge base: ``according to relevant laws and regulations\ldots'' — vague, unverifiable.
+
+With a knowledge base: specific articles cited, verbatim text shown, relevance to case explained.
+
+\screenshot{image-05.png}
+\screenshot{image-06.png}
+
+\subsection{The Essence of RAG}
+
+\textbf{Rather than making the AI memorize everything, give it a reference library.} Three problems RAG solves: knowledge cutoff (documents update anytime), hallucination risk (constrained to real documents), domain depth (specialist knowledge without retraining).
+
+\begin{insightbox}
+  \textbf{Core Insight:} RAG means your proprietary documents become the AI's source of truth — updatable, auditable, controlled by you.
+\end{insightbox}
+
+\subsection{Chunking and Vectorization}
+
+\begin{itemize}
+  \item \textbf{Chunking}: The system detects \textbf{Article X} markers and splits by article. Precise retrieval requires precise granularity.
+  \item \textbf{Vectorization}: Each unit → 4,096-dimensional vector. ``Rear-end collision'' and ``vehicle behind strikes rear of vehicle ahead'' are different in characters but close in vector space — vectors capture \emph{meaning}, not \emph{spelling}.
+\end{itemize}
+
+% ── 4. MCP ─────────────────────────────────────────────────────
+\section{MCP — From Advisor to Executor}
+
+\textbf{The core question}: Can an AI do more than ``talk'' — can it actually ``act''?
+
+\subsection{Prerequisites}
+
+MCP must be enabled server-side (\code{MCP\_ENABLED=true}). If the \textbf{MCP Settings} tab is not visible, contact the administrator.
+
+\subsection{Experience It}
+
+\begin{enumerate}
+  \item Switch to \textbf{MCP Settings}. You will see a \eltaginfo{System} connection: \textbf{PDF Report Generator} — a preset that generates formal PDF documents.
+\end{enumerate}
+
+\screenshot{image-07.png}
+
+\begin{enumerate}[resume]
+  \item Enable the tool: go to \textbf{Accident Analysis} → click the gear icon on the \textbf{Report Agent} → \textbf{MCP Tools} tab → toggle \textbf{PDF Report Generator} on.
+\end{enumerate}
+
+\screenshot{image-08.png}
+
+\begin{enumerate}[resume]
+  \item Run analysis → switch to \textbf{History} → click \textbf{Download PDF} to get a formatted report.
+\end{enumerate}
+
+\screenshot{image-09.png}
+
+\subsection{Tool Calling: Crossing from Advice to Action}
+
+\begin{minted}[bgcolor=codebg, fontsize=\small, breaklines, frame=single, framesep=8pt]{text}
+Understand the need → decide which tool to call
+  → pass parameters → receive results → continue reasoning
+\end{minted}
+
+The AI itself judges \emph{when} to call, \emph{which} tool, and \emph{how} to interpret the result — not a pre-scripted workflow.
+
+\begin{insightbox}
+  \textbf{Core Insight:} Without tools, AI is a ``consultant.'' With tools, AI becomes an ``executor'' — crossing from decision support to process automation.
+\end{insightbox}
+
+\subsection{MCP: A Universal Protocol}
+
+MCP solves the N×M scaling problem (10 systems × 50 APIs = 500 custom integrations). One standard for discovery, invocation, and extension. MCP is to AI tools what USB is to computer peripherals.
+
+\subsection{System Connections vs.\ User Connections}
+
+\medskip
+\begin{tabularx}{\textwidth}{@{} l L L @{}}
+\toprule
+\rowcolor{tablehead}
+\textbf{Type} & \textbf{Characteristics} & \textbf{Management} \\
+\midrule
+\textbf{System Connections} & Preset, non-deletable; platform-native capabilities & Platform maintains \\
+\textbf{User Connections}   & User-added; on-demand external capabilities  & User manages lifecycle \\
+\bottomrule
+\end{tabularx}
+\medskip
+
+Use \textbf{Add MCP Server} to connect external services — mapping, weather, databases — growing the AI's capability map organically.
+
+% ── 5. Skills ──────────────────────────────────────────────────
+\section{Skills — Evolve Without Rewriting Code}
+
+\textbf{The core question}: Can we upgrade an AI agent's capabilities without touching code?
+
+\subsection{Experience It}
+
+\begin{enumerate}
+  \item Switch to the \textbf{Skills} tab. Four pre-installed system skills, each \eltaginfo{System} and non-deletable:
+\end{enumerate}
+
+\medskip
+\begin{tabularx}{\textwidth}{@{} l l L @{}}
+\toprule
+\rowcolor{tablehead}
+\textbf{Skill} & \textbf{Default Agent} & \textbf{Purpose} \\
+\midrule
+\code{vision-enhancer}    & Vision    & Damage classification, road condition grading, weather/lighting analysis \\
+\code{severity-enhancer}  & Severity  & Injury risk classification, multi-factor severity matrix \\
+\code{liability-enhancer} & Liability & Fault assessment criteria, accident-type responsibility splits \\
+\code{report-enhancer}    & Report    & Report template, post-accident checklists, language consistency \\
+\bottomrule
+\end{tabularx}
+\medskip
+
+\begin{enumerate}[resume]
+  \item Create a custom skill: Click \textbf{New Skill} → paste a \code{SKILL.md} document:
+\end{enumerate}
+
+\begin{minted}[bgcolor=codebg, fontsize=\small, breaklines, frame=single, framesep=8pt]{yaml}
+---
+name: severity-checklist
+description: |
+  A structured checklist for comprehensive severity assessment,
+  covering vehicle damage grades, injury classification,
+  and environmental hazard evaluation.
+---
+\end{minted}
+
+\begin{minted}[bgcolor=codebg, fontsize=\small, breaklines, frame=single, framesep=8pt]{markdown}
+# Severity Assessment Checklist
+
+## Instructions
+
+When assessing accident severity, systematically evaluate:
+
+### 1. Vehicle Damage
+- Level A: Cosmetic damage only (scratches, dents)
+- Level B: Functional damage (lights, mirrors, windows)
+- Level C: Structural damage (frame, axles, crumple zones)
+- Level D: Total loss
+
+### 2. Injury Classification
+- Minor: Bruises, whiplash — outpatient treatment
+- Moderate: Fractures, lacerations — hospitalization < 7 days
+- Severe: Life-threatening, permanent disability — hospitalization ≥ 7 days
+- Fatal: One or more fatalities
+
+### 3. Environmental Hazards
+- Fluid spills (fuel, oil, coolant)
+- Road blockage (partial or full lane closure)
+- Secondary collision risk (blind curves, high-speed traffic)
+\end{minted}
+
+\begin{enumerate}[resume]
+  \item Bind to agent: \textbf{Accident Analysis} → gear icon on \textbf{Severity Agent} → \textbf{Skills} tab → toggle \code{severity-checklist} on.
+  \item Run analysis — the Severity Agent step shows a \eltagwarning{severity-checklist} tag and the assessment reflects the structured checklist approach.
+\end{enumerate}
+
+\subsection{What Happened}
+
+A \textbf{Skill} is a reusable capability package stored as \code{SKILL.md} under \texttt{server/data/skills/<skill-name>/}. At runtime:
+
+\begin{enumerate}
+  \item \code{SkillsManager} parses all \code{SKILL.md} files at startup.
+  \item The orchestrator queries enabled skills per agent (merging persisted bindings + per-request selections).
+  \item Skills are injected into the agent's system prompt with boundary markers:
+\end{enumerate}
+
+\begin{minted}[bgcolor=codebg, fontsize=\small, breaklines, frame=single, framesep=8pt]{text}
+--- BEGIN SKILLS ---
+[Skill: severity-checklist]
+Description: A structured checklist for comprehensive severity assessment...
+Instructions:
+# Severity Assessment Checklist
+...
+[/Skill: severity-checklist]
+--- END SKILLS ---
+\end{minted}
+
+\subsection{Skills in the Capability Stack}
+
+\medskip
+\begin{tabularx}{\textwidth}{@{} l L L @{}}
+\toprule
+\rowcolor{tablehead}
+\textbf{Mechanism} & \textbf{Metaphor} & \textbf{What It Does} \\
+\midrule
+\textbf{Prompt}     & Job description  & Defines \emph{what kind of expert} the agent is \\
+\textbf{RAG}        & Reference library & \emph{What facts} the agent can look up \\
+\textbf{MCP / Tools} & Hands and instruments & \emph{What the agent can do} in the world \\
+\textbf{Skills}     & Training manual  & \emph{How the agent should think and operate} \\
+\bottomrule
+\end{tabularx}
+\medskip
+
+Skills are \textbf{operational know-how} — heuristics, methodologies, checklists. They decouple capability upgrades from code changes. A domain expert authors a \code{SKILL.md}; no deployment, no retraining, no pipeline reconfiguration.
+
+\begin{insightbox}
+  \textbf{Core Insight:} Prompts define \emph{what the agent is}. RAG provides \emph{what it can reference}. MCP enables \emph{what it can do}. Skills define \emph{how it thinks} — modular, swappable, authorable by domain experts.
+\end{insightbox}
+
+\subsection{The SKILL.md Format}
+
+\begin{minted}[bgcolor=codebg, fontsize=\small, breaklines, frame=single, framesep=8pt]{yaml}
+---
+name: <unique-identifier>
+description: |
+  <what this skill provides — used for discovery and selection>
+---
+\end{minted}
+
+\begin{minted}[bgcolor=codebg, fontsize=\small, breaklines, frame=single, framesep=8pt]{markdown}
+# <Title>
+
+## Instructions
+
+<Guidance, heuristics, checklists, or methodologies.
+Use standard Markdown — headings, tables, lists.>
+\end{minted}
+
+The \code{name} is the unique identifier. The \code{description} appears in the UI. The body is injected into the agent's system prompt — write it like a training manual for a new employee.
+
+% ── Summary ────────────────────────────────────────────────────
+\section{Summary: The Five-Layer Capability Stack}
+
+\begingroup
+\small
+\begin{longtable}{@{} p{0.12\textwidth} p{0.17\textwidth} p{0.30\textwidth} p{0.33\textwidth} @{}}
+\toprule
+\rowcolor{tablehead}
+\textbf{Layer} & \textbf{Concept} & \textbf{The Leap} & \textbf{Business Impact} \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+1 & \textbf{Prompt} & From ``can talk'' to ``says the right thing'' & One model serves many business functions \\[4pt]
+2 & \textbf{Agent}  & From ``a model'' to ``a digital specialist'' & Auditable, tool-equipped unit for business processes \\[4pt]
+3 & \textbf{RAG}    & From ``remembering'' to ``looking it up'' & Proprietary documents become the AI's source of truth \\[4pt]
+4 & \textbf{MCP}    & From ``advising'' to ``executing'' & Enterprise services become AI-callable through one standard \\[4pt]
+5 & \textbf{Skills} & From ``built once'' to ``continuously evolving'' & Domain experts upgrade AI without engineering \\
+\bottomrule
+\end{longtable}
+\endgroup
+
+\end{document}

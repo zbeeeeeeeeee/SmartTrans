@@ -4,6 +4,22 @@ const LEVEL_ORDER: Record<Level, number> = { DEBUG: 0, INFO: 1, WARN: 2, ERROR: 
 
 const MIN_LEVEL: Level = (process.env.LOG_LEVEL as Level) ?? 'DEBUG'
 
+// ANSI color codes. Detects TTY, supports FORCE_COLOR / NO_COLOR env vars.
+// When running under concurrently (npm run dev), set FORCE_COLOR=1 in server/.env
+// to force colors since concurrently pipes child stdout.
+const useColor = (() => {
+  if (process.env.NO_COLOR !== undefined) return false
+  if (process.env.FORCE_COLOR !== undefined && process.env.FORCE_COLOR !== '0') return true
+  return process.stdout.isTTY || process.stderr.isTTY ? true : false
+})()
+const COLORS: Record<Level, string> = {
+  DEBUG: '\x1b[2m',   // dim / gray
+  INFO:  '',           // default
+  WARN:  '\x1b[33m',  // yellow
+  ERROR: '\x1b[31m',  // red
+}
+const RESET = '\x1b[0m'
+
 function beijingTimestamp(): string {
   return new Date().toLocaleString('sv-SE', { timeZone: 'Asia/Shanghai', hour12: false })
 }
@@ -14,7 +30,9 @@ function shouldLog(level: Level): boolean {
 
 function format(level: Level, ctx: string, message: string, data?: unknown): string {
   const ts = beijingTimestamp()
-  const head = `[${ts}] [${level.padEnd(5)}] [${ctx}]`
+  const color = useColor ? COLORS[level] : ''
+  const reset = useColor ? RESET : ''
+  const head = `[${ts}] [${color}${level.padEnd(5)}${reset}] [${ctx}]`
   if (data !== undefined) {
     const extra = typeof data === 'string' ? data : JSON.stringify(data, null, 2)
     return `${head} ${message}\n${extra}`
