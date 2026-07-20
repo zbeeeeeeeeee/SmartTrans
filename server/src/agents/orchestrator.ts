@@ -139,6 +139,7 @@ export interface SkillSelection {
  * Finally persists to DB and returns report ID.
  */
 export async function* runPipeline(
+  userId: string,
   images: Buffer[],
   imagePaths: string[],
   description: string,
@@ -237,8 +238,8 @@ export async function* runPipeline(
     log.info(`Stage complete: report — citedArticles=${report.citedArticles?.length ?? 0}`, report.citedArticles)
 
     // ---- Persist ----
-    const reportId = insertReport({ description, imagePaths, scene, severity, liability, report })
-    log.info(`Report persisted, id=${reportId}`)
+    const reportId = insertReport(userId, { description, imagePaths, scene, severity, liability, report })
+    log.info(`Report persisted, id=${reportId}, user=${userId}`)
 
     // ---- PDF generation (via MCP tool) ----
     if (pdfToolKey) {
@@ -247,7 +248,7 @@ export async function* runPipeline(
         const rawResult = await pdfTool.execute({ reportJson: JSON.stringify(report), language })
         const result = normalizePdfResult(rawResult)
         if (result?.success !== false && result?.pdfPath) {
-          updateReportPdfPath(reportId, result.pdfPath)
+          updateReportPdfPath(reportId, userId, result.pdfPath)
           log.info(`PDF generated via MCP — ${result.filename ?? result.pdfPath}`)
         } else {
           log.warn(`PDF tool returned failure — ${JSON.stringify(rawResult)}`)

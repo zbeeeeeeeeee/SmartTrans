@@ -1,19 +1,23 @@
 <script setup lang="ts">
 import { computed, ref, onMounted, provide, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { Van } from '@element-plus/icons-vue'
-import { getMcpStatus } from '@/api/client'
+import { getMcpStatus, isAuthenticated, getCurrentUser, logout } from '@/api/client'
 import { elementLocales } from '@/i18n/element-locales'
 import LanguageSwitcher from '@/components/LanguageSwitcher.vue'
 import type { SupportedLanguage } from '@/i18n/types'
 
 const { t, locale } = useI18n()
 const route = useRoute()
+const router = useRouter()
 const active = computed(() => route.path)
 
 const mcpEnabled = ref(false)
 provide('mcpEnabled', mcpEnabled)
+
+const authed = ref(isAuthenticated())
+const user = ref(getCurrentUser())
 
 const elLocale = computed(() => elementLocales[locale.value as SupportedLanguage])
 
@@ -35,6 +39,13 @@ onMounted(async () => {
     // Silently hide MCP nav item on fetch failure
   }
 })
+
+function handleLogout() {
+  logout()
+  authed.value = false
+  user.value = null
+  router.push('/login')
+}
 </script>
 
 <template>
@@ -58,6 +69,15 @@ onMounted(async () => {
           <el-menu-item index="/skills">{{ t('nav.skills') }}</el-menu-item>
           <el-menu-item v-if="mcpEnabled" index="/mcp">{{ t('nav.mcp') }}</el-menu-item>
         </el-menu>
+        <div style="flex:1" />
+        <template v-if="authed && user">
+          <span class="user-name">{{ user.username }}</span>
+          <el-button text size="small" @click="handleLogout">{{ t('auth.logout') }}</el-button>
+        </template>
+        <template v-else>
+          <el-button text size="small" @click="router.push('/login')">{{ t('auth.login') }}</el-button>
+          <el-button text size="small" @click="router.push('/register')">{{ t('auth.register') }}</el-button>
+        </template>
         <LanguageSwitcher />
       </el-header>
       <el-main>
@@ -95,6 +115,10 @@ body {
 }
 .nav {
   border-bottom: none !important;
+}
+.user-name {
+  font-size: 14px;
+  color: var(--el-text-color-regular);
 }
 .el-main {
   background: var(--el-bg-color-page);

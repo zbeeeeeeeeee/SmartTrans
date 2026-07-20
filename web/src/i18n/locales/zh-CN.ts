@@ -269,4 +269,9 @@ export default {
     compressedMultiple: '已压缩 {n} 张图片',
   },
   configMCP: '配置工具与技能',
+  auth: {
+    login: '登录',
+    register: '注册',
+    logout: '退出',
+  },
 }

@@ -271,4 +271,9 @@ export default {
     compressedMultiple: '{n} images compressed',
   },
   configMCP: 'Configure Tools & Skills',
+  auth: {
+    login: 'Login',
+    register: 'Register',
+    logout: 'Logout',
+  },
 }

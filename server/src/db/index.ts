@@ -46,6 +46,14 @@ db.exec(`
     article_no  TEXT,
     token_count INTEGER
   );
+
+  CREATE TABLE IF NOT EXISTS users (
+    id            TEXT PRIMARY KEY,
+    username      TEXT UNIQUE NOT NULL,
+    email         TEXT UNIQUE NOT NULL,
+    password_hash TEXT NOT NULL,
+    created_at    TEXT DEFAULT (datetime('now', '+8 hours'))
+  );
 `)
 
 db.exec(
@@ -132,6 +140,15 @@ db.exec(`
   }
 }
 
+// 安全迁移：reports 表添加 user_id 列（如果不存在）
+{
+  const reportCols = db.pragma('table_info(reports)') as { name: string }[]
+  if (!reportCols.some((c) => c.name === 'user_id')) {
+    db.exec('ALTER TABLE reports ADD COLUMN user_id TEXT')
+    log.info('迁移: reports 表添加 user_id 列')
+  }
+}
+
 // 启动时输出知识库状态
 const docCount = (db.prepare('SELECT COUNT(*) AS n FROM kb_documents').get() as { n: number }).n
 const chunkCount = (db.prepare('SELECT COUNT(*) AS n FROM kb_chunks').get() as { n: number }).n
@@ -141,4 +158,5 @@ const mcpSettingsCount = (db.prepare('SELECT COUNT(*) AS n FROM agent_mcp_settin
 const pdfCount = (db.prepare('SELECT COUNT(*) AS n FROM reports WHERE pdf_path IS NOT NULL').get() as { n: number }).n
 const skillCount = (db.prepare('SELECT COUNT(*) AS n FROM skills').get() as { n: number }).n
 const skillSettingsCount = (db.prepare('SELECT COUNT(*) AS n FROM agent_skill_settings').get() as { n: number }).n
-log.info(`数据库就绪 — reports 表, kb_documents=${docCount}, kb_chunks=${chunkCount}, vec_kb_chunks=${vecCount}, mcp_connections=${mcpConnCount}, agent_mcp_settings=${mcpSettingsCount}, reports_with_pdf=${pdfCount}, skills=${skillCount}, agent_skill_settings=${skillSettingsCount}`)
+const userCount = (db.prepare('SELECT COUNT(*) AS n FROM users').get() as { n: number }).n
+log.info(`数据库就绪 — reports 表, users=${userCount}, kb_documents=${docCount}, kb_chunks=${chunkCount}, vec_kb_chunks=${vecCount}, mcp_connections=${mcpConnCount}, agent_mcp_settings=${mcpSettingsCount}, reports_with_pdf=${pdfCount}, skills=${skillCount}, agent_skill_settings=${skillSettingsCount}`)

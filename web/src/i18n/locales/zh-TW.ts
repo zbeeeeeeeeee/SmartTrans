@@ -269,4 +269,9 @@ export default {
     compressedMultiple: '已壓縮 {n} 張圖片',
   },
   configMCP: '設定工具與技能',
+  auth: {
+    login: '登入',
+    register: '註冊',
+    logout: '登出',
+  },
 }

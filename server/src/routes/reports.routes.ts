@@ -4,19 +4,22 @@ import { Router } from 'express'
 import { createLogger } from '../utils/logger'
 import { config } from '../config'
 import { getReport, listReports } from '../db/reports.repo'
+import { authRequired } from '../middleware/auth'
 
 const log = createLogger('route:reports')
 const router = Router()
 
-router.get('/', (_req, res) => {
-  const reports = listReports()
-  log.info(`GET / — ${reports.length} 条报告`)
+router.use(authRequired)
+
+router.get('/', (req, res) => {
+  const reports = listReports(req.userId!)
+  log.info(`GET / — ${reports.length} 条报告, user=${req.userId}`)
   res.json(reports)
 })
 
 router.get('/:id', (req, res) => {
   log.info(`GET /${req.params.id}`)
-  const report = getReport(req.params.id)
+  const report = getReport(req.params.id, req.userId!)
   if (!report) {
     log.warn(`GET /${req.params.id} — 未找到`)
     res.status(404).json({ error: 'report not found' })
@@ -28,7 +31,7 @@ router.get('/:id', (req, res) => {
 
 router.get('/:id/pdf', (req, res) => {
   log.info(`GET /${req.params.id}/pdf`)
-  const record = getReport(req.params.id)
+  const record = getReport(req.params.id, req.userId!)
   if (!record || !record.pdfPath) {
     log.warn(`GET /${req.params.id}/pdf — PDF 不存在`)
     res.status(404).json({ error: 'PDF not found' })

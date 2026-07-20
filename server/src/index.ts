@@ -7,6 +7,7 @@ import { config } from './config'
 import { db } from './db/index'
 import { errorHandler } from './middleware/error'
 import analysisRoutes from './routes/analysis.routes'
+import authRoutes from './routes/auth.routes'
 import knowledgeRoutes from './routes/knowledge.routes'
 import reportsRoutes from './routes/reports.routes'
 import { mcpRoutes } from './routes/mcp.routes'
@@ -34,6 +35,7 @@ app.get('/api/health', (_req, res) => {
   res.json({ ok: true })
 })
 app.use('/api/reports', reportsRoutes)
+app.use('/api/auth', authRoutes)
 app.use('/api/knowledge', knowledgeRoutes)
 app.use('/api/mcp', mcpRoutes)
 app.use('/api/skills', skillsRoutes)

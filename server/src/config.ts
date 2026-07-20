@@ -20,6 +20,7 @@ const dataDir = process.env.DATA_DIR
 
 export const config = {
   port: Number(process.env.PORT ?? 28123),
+  jwtSecret: process.env.JWT_SECRET ?? 'smarttrans-dev-secret-change-in-production',
   paths: {
     serverRoot,
     data: dataDir,

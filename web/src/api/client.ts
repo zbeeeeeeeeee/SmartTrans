@@ -1,3 +1,67 @@
+/** 获取当前存储的 accessToken */
+function getToken(): string | null {
+  return localStorage.getItem('accessToken')
+}
+
+/** 是否已登录 */
+export function isAuthenticated(): boolean {
+  return !!getToken()
+}
+
+/** 获取当前用户信息 */
+export function getCurrentUser(): { id: string; username: string; email: string } | null {
+  try {
+    const raw = localStorage.getItem('user')
+    return raw ? JSON.parse(raw) : null
+  } catch {
+    return null
+  }
+}
+
+/** 退出登录 */
+export function logout(): void {
+  localStorage.removeItem('accessToken')
+  localStorage.removeItem('user')
+}
+
+/** 通用 API 请求 — 自动带 Authorization header */
+export async function apiClient(methodPath: string, body?: unknown): Promise<any> {
+  const [method, path] = methodPath.split(' ', 2)
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+  const token = getToken()
+  if (token) headers['Authorization'] = `Bearer ${token}`
+
+  const res = await fetch(path, {
+    method,
+    headers,
+    body: body ? JSON.stringify(body) : undefined,
+  })
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: `HTTP ${res.status}` }))
+    throw new Error((err as { error?: string }).error ?? `HTTP ${res.status}`)
+  }
+
+  return res.json()
+}
+
+/** 带 Authorization 的通用 GET 请求 */
+async function authGet(path: string): Promise<any> {
+  const headers: Record<string, string> = {}
+  const token = getToken()
+  if (token) headers['Authorization'] = `Bearer ${token}`
+  const res = await fetch(path, { headers })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: `HTTP ${res.status}` }))
+    throw new Error((err as { error?: string }).error ?? `HTTP ${res.status}`)
+  }
+  return res.json()
+}
+
+// ============================================================
+// SSE / Analysis
+// ============================================================
+
 export interface StageEvent {
   type: 'stage_start' | 'stage_complete' | 'done' | 'error'
   stage?: string
@@ -25,7 +89,11 @@ export async function analyze(
   fd.append('coordinates', coordinates)
   fd.append('timestamp', new Date().toISOString())
 
-  const res = await fetch('/api/analyze', { method: 'POST', body: fd })
+  const headers: Record<string, string> = {}
+  const token = getToken()
+  if (token) headers['Authorization'] = `Bearer ${token}`
+
+  const res = await fetch('/api/analyze', { method: 'POST', body: fd, headers })
   if (!res.ok || !res.body) throw new Error(`Request failed: HTTP ${res.status}`)
 
   const reader = res.body.getReader()
@@ -50,6 +118,10 @@ export async function analyze(
   }
 }
 
+// ============================================================
+// Reports
+// ============================================================
+
 export interface ReportSummary {
   id: string
   description: string
@@ -71,12 +143,21 @@ export interface ReportRecord {
 }
 
 export async function listReports(): Promise<ReportSummary[]> {
-  return (await fetch('/api/reports')).json()
+  return authGet('/api/reports')
 }
 
 export async function getReport(id: string): Promise<ReportRecord> {
-  return (await fetch(`/api/reports/${id}`)).json()
+  return authGet(`/api/reports/${id}`)
 }
+
+/** Download report PDF */
+export function downloadReportPdf(id: string): void {
+  window.open(`/api/reports/${id}/pdf`, '_blank')
+}
+
+// ============================================================
+// Knowledge Base
+// ============================================================
 
 export interface KnowledgeStats {
   documents: number
@@ -92,16 +173,11 @@ export interface LegalChunk {
 }
 
 export async function knowledgeStats(): Promise<KnowledgeStats> {
-  return (await fetch('/api/knowledge')).json()
+  return authGet('/api/knowledge')
 }
 
 export async function searchKnowledge(query: string, k = 5): Promise<LegalChunk[]> {
-  const res = await fetch('/api/knowledge/search', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ query, k }),
-  })
-  return res.json()
+  return apiClient('POST /api/knowledge/search', { query, k })
 }
 
 // ---- RAG Document Management ----
@@ -119,7 +195,10 @@ export interface UploadedDocument {
 export async function uploadKnowledgeFile(file: File): Promise<UploadedDocument> {
   const fd = new FormData()
   fd.append('file', file)
-  const res = await fetch('/api/knowledge/documents', { method: 'POST', body: fd })
+  const headers: Record<string, string> = {}
+  const token = getToken()
+  if (token) headers['Authorization'] = `Bearer ${token}`
+  const res = await fetch('/api/knowledge/documents', { method: 'POST', body: fd, headers })
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: `HTTP ${res.status}` }))
     throw new Error((err as { error?: string }).error ?? `HTTP ${res.status}`)
@@ -156,24 +235,26 @@ export function uploadKnowledgeFileWithProgress(
       }
     })
     xhr.addEventListener('error', () => reject(new Error('Network error')))
+    const token = getToken()
     xhr.open('POST', '/api/knowledge/documents')
+    if (token) xhr.setRequestHeader('Authorization', `Bearer ${token}`)
     xhr.send(fd)
   })
 }
 
 /** List all uploaded documents */
 export async function listKnowledgeDocuments(): Promise<UploadedDocument[]> {
-  const res = await fetch('/api/knowledge/documents')
-  return res.json()
+  return authGet('/api/knowledge/documents')
 }
 
 /** Delete a document */
 export async function deleteKnowledgeDocument(id: number): Promise<void> {
-  const res = await fetch(`/api/knowledge/documents/${id}`, { method: 'DELETE' })
-  if (!res.ok) throw new Error(`Delete failed: HTTP ${res.status}`)
+  await apiClient('DELETE /api/knowledge/documents/' + id)
 }
 
-// ---- MCP ----
+// ============================================================
+// MCP
+// ============================================================
 
 export interface McpToolInfo {
   name: string
@@ -211,45 +292,33 @@ export interface AddMcpConfig {
 
 /** MCP global status */
 export async function getMcpStatus(): Promise<{ mcpEnabled: boolean }> {
-  return (await fetch('/api/mcp/status')).json()
+  return authGet('/api/mcp/status')
 }
 
 /** List all MCP connections */
 export async function listMcpConnections(): Promise<McpConnectionStatus[]> {
-  return (await fetch('/api/mcp/connections')).json()
+  return authGet('/api/mcp/connections')
 }
 
 /** Add MCP connection */
 export async function addMcpConnection(config: AddMcpConfig): Promise<McpConnectionStatus> {
-  const res = await fetch('/api/mcp/connections', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(config),
-  })
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: `HTTP ${res.status}` }))
-    throw new Error((err as { error?: string }).error ?? `HTTP ${res.status}`)
-  }
-  return res.json()
+  return apiClient('POST /api/mcp/connections', config)
 }
 
 /** Delete MCP connection */
 export async function deleteMcpConnection(id: string): Promise<void> {
-  const res = await fetch(`/api/mcp/connections/${id}`, { method: 'DELETE' })
-  if (!res.ok) throw new Error(`Delete failed: HTTP ${res.status}`)
+  await apiClient('DELETE /api/mcp/connections/' + id)
 }
 
 /** Reconnect MCP */
 export async function reconnectMcpConnection(id: string): Promise<McpConnectionStatus> {
-  const res = await fetch(`/api/mcp/connections/${id}/reconnect`, { method: 'POST' })
-  if (!res.ok) throw new Error(`Reconnect failed: HTTP ${res.status}`)
-  return res.json()
+  return apiClient('POST /api/mcp/connections/' + id + '/reconnect')
 }
 
 /** Get agent MCP settings */
 export async function getAgentMcpSettings(agentName?: string): Promise<AgentMcpSetting[]> {
   const query = agentName ? `?agent=${encodeURIComponent(agentName)}` : ''
-  return (await fetch(`/api/mcp/agent-settings${query}`)).json()
+  return authGet('/api/mcp/agent-settings' + query)
 }
 
 /** Update agent MCP enable/disable */
@@ -258,20 +327,12 @@ export async function updateAgentMcpSetting(
   mcpConnectionId: string,
   enabled: boolean,
 ): Promise<void> {
-  const res = await fetch('/api/mcp/agent-settings', {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ agentName, mcpConnectionId, enabled }),
-  })
-  if (!res.ok) throw new Error(`Update failed: HTTP ${res.status}`)
+  await apiClient('PUT /api/mcp/agent-settings', { agentName, mcpConnectionId, enabled })
 }
 
-/** Download report PDF */
-export function downloadReportPdf(id: string): void {
-  window.open(`/api/reports/${id}/pdf`, '_blank')
-}
-
-// ---- Skills ----
+// ============================================================
+// Skills
+// ============================================================
 
 export interface SkillMeta {
   id: string
@@ -310,38 +371,28 @@ export interface ProviderCapabilities {
 
 /** List all skills */
 export async function listSkills(): Promise<SkillMeta[]> {
-  return (await fetch('/api/skills')).json()
+  return authGet('/api/skills')
 }
 
 /** Get single skill with full content */
 export async function getSkill(id: string): Promise<SkillWithContent> {
-  return (await fetch(`/api/skills/${id}`)).json()
+  return authGet('/api/skills/' + id)
 }
 
 /** Create skill */
 export async function createSkill(skillMd: string, files?: { path: string; content: string }[]): Promise<SkillMeta> {
-  const res = await fetch('/api/skills', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ skillMd, files: files ?? [] }),
-  })
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: `HTTP ${res.status}` }))
-    throw new Error((err as { error?: string }).error ?? `HTTP ${res.status}`)
-  }
-  return res.json()
+  return apiClient('POST /api/skills', { skillMd, files: files ?? [] })
 }
 
 /** Delete skill */
 export async function deleteSkill(id: string): Promise<void> {
-  const res = await fetch(`/api/skills/${id}`, { method: 'DELETE' })
-  if (!res.ok) throw new Error(`Delete failed: HTTP ${res.status}`)
+  await apiClient('DELETE /api/skills/' + id)
 }
 
 /** Get agent-skill bindings */
 export async function getAgentSkillSettings(agentName?: string): Promise<AgentSkillSetting[]> {
   const query = agentName ? `?agent=${encodeURIComponent(agentName)}` : ''
-  return (await fetch(`/api/skills/bindings/agent-settings${query}`)).json()
+  return authGet('/api/skills/bindings/agent-settings' + query)
 }
 
 /** Update agent-skill binding */
@@ -350,25 +401,15 @@ export async function updateAgentSkillSetting(
   skillId: string,
   enabled: boolean,
 ): Promise<void> {
-  const res = await fetch('/api/skills/bindings/agent-settings', {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ agentName, skillId, enabled }),
-  })
-  if (!res.ok) throw new Error(`Update failed: HTTP ${res.status}`)
+  await apiClient('PUT /api/skills/bindings/agent-settings', { agentName, skillId, enabled })
 }
 
 /** Update skill global enable/disable */
 export async function updateSkillEnabled(id: string, enabled: boolean): Promise<void> {
-  const res = await fetch(`/api/skills/${id}/enabled`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ enabled }),
-  })
-  if (!res.ok) throw new Error(`Update failed: HTTP ${res.status}`)
+  await apiClient('PUT /api/skills/' + id + '/enabled', { enabled })
 }
 
 /** Query provider capability for native uploadSkill */
 export async function getProviderCapabilities(): Promise<ProviderCapabilities> {
-  return (await fetch('/api/skills/meta/provider-capabilities')).json()
+  return authGet('/api/skills/meta/provider-capabilities')
 }

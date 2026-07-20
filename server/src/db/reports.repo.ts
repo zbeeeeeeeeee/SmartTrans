@@ -69,13 +69,14 @@ function parseRow(row: ReportRow): ReportRecord {
   }
 }
 
-export function insertReport(input: InsertReportInput): string {
+export function insertReport(userId: string, input: InsertReportInput): string {
   const id = randomUUID()
   db.prepare(
-    `INSERT INTO reports (id, description, image_paths, scene, severity, liability, report, created_at)
-     VALUES (@id, @description, @image_paths, @scene, @severity, @liability, @report, @created_at)`,
+    `INSERT INTO reports (id, user_id, description, image_paths, scene, severity, liability, report, created_at)
+     VALUES (@id, @user_id, @description, @image_paths, @scene, @severity, @liability, @report, @created_at)`,
   ).run({
     id,
+    user_id: userId,
     description: input.description,
     image_paths: JSON.stringify(input.imagePaths),
     scene: JSON.stringify(input.scene),
@@ -84,15 +85,15 @@ export function insertReport(input: InsertReportInput): string {
     report: JSON.stringify(input.report),
     created_at: beijingNow(),
   })
-  log.info(`插入报告 — id=${id}`)
+  log.info(`插入报告 — id=${id}, user=${userId}`)
   return id
 }
 
-export function listReports(): ReportSummary[] {
+export function listReports(userId: string): ReportSummary[] {
   const rows = db
-    .prepare(`SELECT id, description, severity, created_at, pdf_path FROM reports ORDER BY created_at DESC`)
-    .all() as (Pick<ReportRow, 'id' | 'description' | 'severity' | 'created_at'> & { pdf_path: string | null })[]
-  log.debug(`列出报告 — ${rows.length} 条`)
+    .prepare(`SELECT id, description, severity, created_at, pdf_path FROM reports WHERE user_id = ? ORDER BY created_at DESC`)
+    .all(userId) as (Pick<ReportRow, 'id' | 'description' | 'severity' | 'created_at'> & { pdf_path: string | null })[]
+  log.debug(`列出报告 — ${rows.length} 条, user=${userId}`)
   return rows.map((r) => ({
     id: r.id,
     description: r.description,
@@ -102,14 +103,14 @@ export function listReports(): ReportSummary[] {
   }))
 }
 
-export function updateReportPdfPath(id: string, pdfPath: string): void {
-  db.prepare('UPDATE reports SET pdf_path = ? WHERE id = ?').run(pdfPath, id)
+export function updateReportPdfPath(id: string, userId: string, pdfPath: string): void {
+  db.prepare('UPDATE reports SET pdf_path = ? WHERE id = ? AND user_id = ?').run(pdfPath, id, userId)
   log.info(`更新报告 PDF 路径 — id=${id}`)
 }
 
-export function getReport(id: string): ReportRecord | null {
+export function getReport(id: string, userId: string): ReportRecord | null {
   log.debug(`获取报告 — id=${id}`)
-  const row = db.prepare(`SELECT * FROM reports WHERE id = ?`).get(id) as ReportRow | undefined
+  const row = db.prepare(`SELECT * FROM reports WHERE id = ? AND user_id = ?`).get(id, userId) as ReportRow | undefined
   const found = row ? parseRow(row) : null
   if (!found) log.debug(`报告不存在 — id=${id}`)
   return found
