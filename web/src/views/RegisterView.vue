@@ -5,7 +5,7 @@ import { ElMessage } from 'element-plus'
 import { apiClient } from '@/api/client'
 
 const router = useRouter()
-const form = reactive({ username: '', email: '', password: '' })
+const form = reactive({ username: '', password: '' })
 const loading = ref(false)
 
 async function handleRegister() {
@@ -33,9 +33,6 @@ async function handleRegister() {
       <el-form label-position="top" @submit.prevent="handleRegister">
         <el-form-item label="用户名">
           <el-input v-model="form.username" placeholder="请输入用户名" />
-        </el-form-item>
-        <el-form-item label="邮箱">
-          <el-input v-model="form.email" type="email" placeholder="请输入邮箱" />
         </el-form-item>
         <el-form-item label="密码">
           <el-input v-model="form.password" type="password" placeholder="至少6位" show-password />

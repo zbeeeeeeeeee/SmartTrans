@@ -9,7 +9,7 @@ export function isAuthenticated(): boolean {
 }
 
 /** 获取当前用户信息 */
-export function getCurrentUser(): { id: string; username: string; email: string } | null {
+export function getCurrentUser(): { id: string; username: string } | null {
   try {
     const raw = localStorage.getItem('user')
     return raw ? JSON.parse(raw) : null

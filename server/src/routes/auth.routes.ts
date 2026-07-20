@@ -10,7 +10,6 @@ const router = Router()
 interface UserRow {
   id: string
   username: string
-  email: string
   password_hash: string
   created_at: string
 }
@@ -27,20 +26,20 @@ function verifyPassword(password: string, stored: string): boolean {
   return testHash === hash
 }
 
-function signToken(user: UserRow): { accessToken: string; user: { id: string; username: string; email: string } } {
+function signToken(user: UserRow): { accessToken: string; user: { id: string; username: string } } {
   const payload: JwtPayload = { sub: user.id, username: user.username }
   const accessToken = jwt.sign(payload, config.jwtSecret, { expiresIn: '7d' })
   return {
     accessToken,
-    user: { id: user.id, username: user.username, email: user.email },
+    user: { id: user.id, username: user.username },
   }
 }
 
 // POST /api/auth/register
 router.post('/register', (req, res) => {
-  const { username, email, password } = req.body ?? {}
-  if (!username || !email || !password) {
-    res.status(400).json({ error: 'username, email, and password are required' })
+  const { username, password } = req.body ?? {}
+  if (!username || !password) {
+    res.status(400).json({ error: 'username and password are required' })
     return
   }
   if (password.length < 6) {
@@ -48,15 +47,15 @@ router.post('/register', (req, res) => {
     return
   }
 
-  const exists = db.prepare('SELECT id FROM users WHERE email = ? OR username = ?').get(email, username)
+  const exists = db.prepare('SELECT id FROM users WHERE username = ?').get(username)
   if (exists) {
-    res.status(409).json({ error: 'Username or email already exists' })
+    res.status(409).json({ error: 'Username already exists' })
     return
   }
 
   const id = crypto.randomUUID()
   const passwordHash = hashPassword(password)
-  db.prepare('INSERT INTO users (id, username, email, password_hash) VALUES (?, ?, ?, ?)').run(id, username, email, passwordHash)
+  db.prepare('INSERT INTO users (id, username, password_hash) VALUES (?, ?, ?)').run(id, username, passwordHash)
 
   const user = db.prepare('SELECT * FROM users WHERE id = ?').get(id) as UserRow
   const result = signToken(user)
@@ -83,12 +82,12 @@ router.post('/login', (req, res) => {
 
 // GET /api/auth/me
 router.get('/me', authRequired, (req, res) => {
-  const user = db.prepare('SELECT id, username, email, created_at FROM users WHERE id = ?').get(req.userId!) as UserRow | undefined
+  const user = db.prepare('SELECT id, username, created_at FROM users WHERE id = ?').get(req.userId!) as UserRow | undefined
   if (!user) {
     res.status(404).json({ error: 'User not found' })
     return
   }
-  res.json({ id: user.id, username: user.username, email: user.email, createdAt: user.created_at })
+  res.json({ id: user.id, username: user.username, createdAt: user.created_at })
 })
 
 export default router

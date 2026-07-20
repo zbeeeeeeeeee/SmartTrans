@@ -50,7 +50,6 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS users (
     id            TEXT PRIMARY KEY,
     username      TEXT UNIQUE NOT NULL,
-    email         TEXT UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
     created_at    TEXT DEFAULT (datetime('now', '+8 hours'))
   );
@@ -146,6 +145,26 @@ db.exec(`
   if (!reportCols.some((c) => c.name === 'user_id')) {
     db.exec('ALTER TABLE reports ADD COLUMN user_id TEXT')
     log.info('迁移: reports 表添加 user_id 列')
+  }
+}
+
+// 安全迁移：去掉 users 表的 email 列（如果存在）
+{
+  const userCols = db.pragma('table_info(users)') as { name: string }[]
+  if (userCols.some((c) => c.name === 'email')) {
+    db.exec(`
+      CREATE TABLE users_new (
+        id            TEXT PRIMARY KEY,
+        username      TEXT UNIQUE NOT NULL,
+        password_hash TEXT NOT NULL,
+        created_at    TEXT DEFAULT (datetime('now', '+8 hours'))
+      );
+      INSERT INTO users_new (id, username, password_hash, created_at)
+        SELECT id, username, password_hash, created_at FROM users;
+      DROP TABLE users;
+      ALTER TABLE users_new RENAME TO users;
+    `)
+    log.info('迁移: users 表移除 email 列')
   }
 }
 
