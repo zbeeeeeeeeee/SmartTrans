@@ -86,8 +86,18 @@ function extractTextFromToolResult(raw: unknown): string | null {
         // addressComponent 或顶层字段
         const compAddr = buildAddressFromComponents(parsed)
         if (compAddr) return compAddr
+        // 高德 API 错误响应不入库
+        if (typeof parsed?.status === 'string' && parsed.status !== '1') {
+          log.warn(`逆地理编码 API 返回非成功状态 — status=${parsed.status}, info=${parsed.info ?? ''}`)
+          return null
+        }
         return textItem.text
       } catch {
+        // 纯文本可能是 API 错误信息，不入库
+        if (textItem.text.includes('API 调用失败') || textItem.text.includes('USER_KEY_RECYCLED')) {
+          log.warn(`逆地理编码返回疑似错误文本，跳过 — "${textItem.text.slice(0, 100)}"`)
+          return null
+        }
         return textItem.text.slice(0, 200)
       }
     }

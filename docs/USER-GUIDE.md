@@ -178,7 +178,7 @@ MCP must be enabled server-side (`MCP_ENABLED=true`). If the **「MCP Settings�
 
 1. Switch to **「MCP Settings」**. You will see a <el-tag size="small" type="info">System</el-tag> connection: **「PDF Report Generator」** — a preset that generates formal PDF documents.
    ![MCP settings screenshot](./images/image-07.png)
-2. Enable the tool: go to **「Accident Analysis」** → click ⚙️ on the **Report Agent** → **「MCP Tools」** tab → toggle **「PDF Report Generator」** on.
+2. The **「PDF Report Generator」** is pre-enabled by default for the Report Agent. To verify or manage tool bindings: go to **「Accident Analysis」** → click ⚙️ on the **Report Agent** → **「MCP Tools」** tab → toggle connections on or off.
    ![MCP tool configuration screenshot](./images/image-08.png)
 3. Run analysis → switch to **「History」** → click **「Download PDF」** to get a formatted report.
    ![History report screenshot](./images/image-09.png)

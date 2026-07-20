@@ -1,6 +1,12 @@
 # Runtime artifacts — generated at runtime, not source code
 data/app.db
+data/app.db-*
 data/uploads/*
 !data/uploads/.gitkeep
 data/pdfs/*
 !data/pdfs/.gitkeep
+data-*/
+
+# Logs
+logs/
+*.log
