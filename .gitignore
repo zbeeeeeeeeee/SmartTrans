@@ -1,6 +1,7 @@
 node_modules/
 dist/
 *.log
+logs/
 
 # env
 .env
@@ -22,4 +23,13 @@ server/data/app.db-*
 server/data/uploads/*
 !server/data/uploads/.gitkeep
 server/data/pdfs/*
+server/data-*/
+
+# LaTeX build artifacts
+docs/latex/_minted/
+docs/latex/*.aux
+docs/latex/*.out
+docs/latex/*.toc
+docs/latex/*.synctex.gz
+docs/latex/*.log
 

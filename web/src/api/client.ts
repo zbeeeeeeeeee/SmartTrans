@@ -150,9 +150,27 @@ export async function getReport(id: string): Promise<ReportRecord> {
   return authGet(`/api/reports/${id}`)
 }
 
-/** Download report PDF */
-export function downloadReportPdf(id: string): void {
-  window.open(`/api/reports/${id}/pdf`, '_blank')
+/** Download report PDF (fetch with JWT token, then trigger browser download) */
+export async function downloadReportPdf(id: string): Promise<void> {
+  const headers: Record<string, string> = {}
+  const token = getToken()
+  if (token) headers['Authorization'] = `Bearer ${token}`
+
+  const res = await fetch(`/api/reports/${id}/pdf`, { headers })
+  if (!res.ok) {
+    if (res.status === 404) throw new Error('PDF not found')
+    throw new Error(`Download failed: HTTP ${res.status}`)
+  }
+
+  const blob = await res.blob()
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `report-${id}.pdf`
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
 }
 
 // ============================================================

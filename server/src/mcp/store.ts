@@ -128,6 +128,22 @@ export function seedPresetConnection(config: McpConnectionConfig): void {
   )
 }
 
+/** 仅在尚不存在时创建 agent-MCP 绑定（不覆盖用户已做的设置） */
+export function seedAgentMcpSetting(
+  agentName: string,
+  mcpConnectionId: string,
+  enabled: boolean,
+): void {
+  const exists = db
+    .prepare('SELECT id FROM agent_mcp_settings WHERE agent_name = ? AND mcp_connection_id = ?')
+    .get(agentName, mcpConnectionId)
+  if (!exists) {
+    db.prepare(
+      'INSERT INTO agent_mcp_settings (agent_name, mcp_connection_id, enabled) VALUES (?, ?, ?)',
+    ).run(agentName, mcpConnectionId, enabled ? 1 : 0)
+  }
+}
+
 export function getAllAgentMcpSettings(): AgentMcpSetting[] {
   const rows = db.prepare('SELECT * FROM agent_mcp_settings').all() as any[]
   return rows.map((r) => ({
