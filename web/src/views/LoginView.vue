@@ -5,7 +5,7 @@ import { ElMessage } from 'element-plus'
 import { apiClient } from '@/api/client'
 
 const router = useRouter()
-const form = reactive({ email: '', password: '' })
+const form = reactive({ username: '', password: '' })
 const loading = ref(false)
 
 async function handleLogin() {
@@ -31,8 +31,8 @@ async function handleLogin() {
         <h2 style="margin:0;text-align:center">登录</h2>
       </template>
       <el-form label-position="top" @submit.prevent="handleLogin">
-        <el-form-item label="邮箱">
-          <el-input v-model="form.email" type="email" placeholder="请输入邮箱" />
+        <el-form-item label="用户名">
+          <el-input v-model="form.username" placeholder="请输入用户名" />
         </el-form-item>
         <el-form-item label="密码">
           <el-input v-model="form.password" type="password" placeholder="请输入密码" show-password />

@@ -65,15 +65,15 @@ router.post('/register', (req, res) => {
 
 // POST /api/auth/login
 router.post('/login', (req, res) => {
-  const { email, password } = req.body ?? {}
-  if (!email || !password) {
-    res.status(400).json({ error: 'email and password are required' })
+  const { username, password } = req.body ?? {}
+  if (!username || !password) {
+    res.status(400).json({ error: 'username and password are required' })
     return
   }
 
-  const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email) as UserRow | undefined
+  const user = db.prepare('SELECT * FROM users WHERE username = ?').get(username) as UserRow | undefined
   if (!user || !verifyPassword(password, user.password_hash)) {
-    res.status(401).json({ error: 'Invalid email or password' })
+    res.status(401).json({ error: 'Invalid username or password' })
     return
   }
 
