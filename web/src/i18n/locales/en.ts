@@ -26,6 +26,9 @@ export default {
     analysisFailed: 'Analysis failed',
     skillsSection: 'Active Skills',
     skillsHint: 'Click to toggle skills on/off. Enabled skills will guide the corresponding AI agent during analysis.',
+    usePresetImage: 'Use Preset Accident Image',
+    presetLoaded: 'Preset image loaded',
+    presetLoadFailed: 'Failed to load preset image',
   },
   agent: {
     vision: { label: 'Vision Agent' },

@@ -25,6 +25,9 @@ export default {
     analysisFailed: '分析失败',
     skillsSection: '启用的技能',
     skillsHint: '点击切换技能开关。启用的技能将在分析时指导对应的 AI 智能体。',
+    usePresetImage: '使用预置事故图片',
+    presetLoaded: '预置图片已加载',
+    presetLoadFailed: '预置图片加载失败',
   },
   agent: {
     vision: { label: '图像识别智能体' },

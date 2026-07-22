@@ -1,6 +1,6 @@
 import { reactive, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import type { UploadUserFile } from 'element-plus'
+import type { UploadUserFile, UploadRawFile } from 'element-plus'
 import { ElMessage } from 'element-plus'
 import { analyze, type StageEvent } from '@/api/client'
 import { compressImage, formatSize } from '@/utils/compressImage'
@@ -29,6 +29,35 @@ export function useAnalysisPipeline() {
   const errorMsg = ref('')
   const finalReport = ref<AccidentReportView | null>(null)
   const expandedKey = ref<string | null>(null)
+  const presetLoading = ref(false)
+
+  const PRESET_IMAGE_URL = '/samples/accident-sample.jpg'
+  const PRESET_IMAGE_NAME = 'accident-sample.jpg'
+
+  async function loadPresetImage(): Promise<void> {
+    presetLoading.value = true
+    try {
+      const res = await fetch(PRESET_IMAGE_URL)
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const blob = await res.blob()
+      const file = new File([blob], PRESET_IMAGE_NAME, {
+        type: blob.type || 'image/jpeg',
+      }) as UploadRawFile
+      file.uid = Date.now()
+      fileList.value = [
+        {
+          name: PRESET_IMAGE_NAME,
+          url: URL.createObjectURL(blob),
+          raw: file,
+        },
+      ]
+      ElMessage.success(t('analyze.presetLoaded'))
+    } catch {
+      ElMessage.error(t('analyze.presetLoadFailed'))
+    } finally {
+      presetLoading.value = false
+    }
+  }
 
   const steps = reactive<AgentStep[]>(
     DEFAULT_STEPS.map((s) => ({ key: s.key, label: s.label, status: 'wait' as const, data: undefined })),
@@ -126,8 +155,10 @@ export function useAnalysisPipeline() {
     finalReport,
     expandedKey,
     steps,
+    presetLoading,
     // actions
     run,
     resetAll,
+    loadPresetImage,
   }
 }

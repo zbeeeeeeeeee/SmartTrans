@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, inject } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Plus, Refresh } from '@element-plus/icons-vue'
+import { Plus, Refresh, Picture } from '@element-plus/icons-vue'
 import { useAnalysisPipeline } from '@/composables/useAnalysisPipeline'
 import AgentProgress from '@/components/AgentProgress.vue'
 import AgentSettingsDialog from '@/components/AgentSettingsDialog.vue'
@@ -20,8 +20,10 @@ const {
   finalReport,
   expandedKey,
   steps,
+  presetLoading,
   run,
   resetAll,
+  loadPresetImage,
 } = useAnalysisPipeline()
 
 // Agent settings dialog state (MCP + Skills)
@@ -53,6 +55,15 @@ function onConfigureAgent(agentKey: string) {
               >
                 <el-icon><Plus /></el-icon>
               </el-upload>
+              <el-button
+                class="preset-btn"
+                :icon="Picture"
+                :loading="presetLoading"
+                link
+                @click="loadPresetImage"
+              >
+                {{ t('analyze.usePresetImage') }}
+              </el-button>
             </el-form-item>
             <el-form-item :label="t('analyze.description')">
               <el-input
@@ -109,6 +120,9 @@ function onConfigureAgent(agentKey: string) {
 .actions {
   display: flex;
   gap: 10px;
+}
+.preset-btn {
+  margin-top: 8px;
 }
 .err {
   margin-top: 16px;
