@@ -50,4 +50,7 @@ export const config = {
   mcp: {
     enabled: parseBool(process.env.MCP_ENABLED, false),
   },
+  amap: {
+    mcpUrl: process.env.AMAP_MCP_URL ?? '',
+  },
 }

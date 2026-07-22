@@ -162,8 +162,13 @@ export async function* runPipeline(
   log.info(`Pipeline started — images ${images.length}, language: ${language}, description: "${description.slice(0, 80)}", coords: "${coordinates ?? ''}", time: "${timestamp ?? ''}"`)
 
   try {
-    // Pre-fetch MCP tools — report agent 只调用一次，从中提取 generate_report_pdf 和 maps_regeocode
-    const reportTools = await mcpManager.getToolsForAgent('report')
+    // Pre-fetch MCP tools - 并行获取每个 agent 各自绑定的工具
+    const [visionTools, severityTools, liabilityTools, reportTools] = await Promise.all([
+      mcpManager.getToolsForAgent('vision'),
+      mcpManager.getToolsForAgent('severity'),
+      mcpManager.getToolsForAgent('liability'),
+      mcpManager.getToolsForAgent('report'),
+    ])
     const pdfToolKey = Object.keys(reportTools).find(
       (k) => k === 'generate_report_pdf' || k.endsWith('__generate_report_pdf'),
     ) ?? ''
@@ -173,11 +178,11 @@ export async function* runPipeline(
     const pdfTool = pdfToolKey ? reportTools[pdfToolKey] : undefined
     const regeocodeTool = regeocodeToolKey ? reportTools[regeocodeToolKey] : undefined
 
-    // 只有 report agent 允许使用 MCP 工具
+    // 每个 agent 接收各自绑定的 MCP 工具，由 LLM 经 function calling 调用
     const agentTools = {
-      vision: {},
-      severity: {},
-      liability: {},
+      vision: visionTools,
+      severity: severityTools,
+      liability: liabilityTools,
       report: reportTools,
     }
 

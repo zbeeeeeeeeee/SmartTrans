@@ -421,17 +421,21 @@ class McpManager {
     seedAgentMcpSetting('report', PDF_PRESET_ID, true)
 
     const AMAP_PRESET_ID = 'system-amap-maps'
-    seedPresetConnection({
-      id: AMAP_PRESET_ID,
-      name: '高德地图',
-      transport: 'http',
-      url: 'https://mcp.amap.com/mcp?key=6c0f226d3820793c1b75ce054ae711ad',
-      isSystem: true,
-    })
-    log.info('预置 MCP 连接已就绪 — 高德地图')
+    if (config.amap.mcpUrl) {
+      seedPresetConnection({
+        id: AMAP_PRESET_ID,
+        name: '高德地图',
+        transport: 'http',
+        url: config.amap.mcpUrl,
+        isSystem: true,
+      })
+      log.info('预置 MCP 连接已就绪 — 高德地图 (来自 AMAP_MCP_URL)')
 
-    // 确保高德地图默认绑定到 report agent
-    seedAgentMcpSetting('report', AMAP_PRESET_ID, true)
+      // 确保高德地图默认绑定到 report agent
+      seedAgentMcpSetting('report', AMAP_PRESET_ID, true)
+    } else {
+      log.info('未配置 AMAP_MCP_URL，跳过高德地图预置')
+    }
   }
 }
 
