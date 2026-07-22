@@ -1,4 +1,4 @@
-# SmartTrans — 交通事故多智能体分析系统
+# SmartTrans - 交通事故多智能体分析系统
 
 基于 Express + Vue 3 + Vercel AI SDK + RAG 的交通事故智能分析平台。上传事故现场图片与文字描述，经由多智能体流水线自动完成场景识别、严重程度评估、责任判定与结构化报告生成，并支持 PDF 报告导出。
 
@@ -10,10 +10,10 @@
 | **前端** | Vue 3 + Vite + TypeScript + Element Plus |
 | **AI** | Vercel AI SDK (`ai` + `@ai-sdk/openai-compatible`) + Zod |
 | **RAG** | AI SDK `embed` / `embedMany` + sqlite-vec |
-| **存储** | better-sqlite3 (SQLite)；上传：multer |
-| **认证** | JWT (register/login) |
+| **存储** | better-sqlite3 (SQLite WAL)；上传：multer |
+| **认证** | JWT (register/login) + 批量账号导入 |
 | **i18n** | 前端 vue-i18n + 后端提示词/标签/PDF 全量本地化 |
-| **MCP** | @ai-sdk/mcp（模型上下文协议工具集成） |
+| **MCP** | @ai-sdk/mcp（模型上下文协议工具集成，按智能体可配置） |
 | **Skills** | 自定义技能系统（模块化 AI 能力注入） |
 
 ## 模型（均走 SiliconFlow OpenAI 兼容端点）
@@ -29,12 +29,22 @@
 ### 多智能体分析流水线
 
 ```
-Vision Agent → Severity Agent + Liability Agent (并行) → Report Agent → PDF
+Vision Agent -> Severity Agent + Liability Agent (并行) -> Report Agent -> PDF
 ```
 
-1. **图像识别** (Qwen3-VL) → 场景描述：车辆、路况、天气、信号灯
+1. **图像识别** (Qwen3-VL) -> 场景描述：车辆、路况、天气、信号灯
 2. **严重程度评估** (DeepSeek) + **责任判定** (DeepSeek + RAG) 并行执行
-3. **报告生成** (DeepSeek) → 综合所有分析结果，生成结构化事故报告，可选 PDF 导出
+3. **报告生成** (DeepSeek) -> 综合所有分析结果，生成结构化事故报告，可选 PDF 导出
+
+### 工作空间沙箱
+
+每次 pipeline 运行自动创建专属工作空间 `server/data/workspaces/<userId>/<runId>/`：
+
+- 上传图片与生成的 PDF 均落入沙箱，工具文件操作限定在沙箱内
+- 双层用户隔离：逻辑层（`getReport(id, userId)` 校验归属）+ 物理层（路径含 userId）
+- 失败时自动清理沙箱；启动时清理孤儿目录
+- History 中点击工作空间按钮可查看沙箱内的图片与 PDF
+- 并发安全：所有文件操作异步（`fs.promises`），SQLite `busy_timeout`，UUID 命名零冲突
 
 ### RAG 知识库
 
@@ -44,15 +54,22 @@ Vision Agent → Severity Agent + Liability Agent (并行) → Report Agent → 
 
 ### MCP 工具集成
 
-- **系统预设**：PDF 报告生成器（自动生成格式化 PDF）、高德地图逆地理编码（坐标 → 地址）
+- **系统预设**：PDF 报告生成器（自动生成格式化 PDF）、高德地图逆地理编码（坐标 -> 地址）
 - **用户自定义**：支持 HTTP / SSE / stdio 三种传输方式，可接入任意 MCP 服务
-- 工具按智能体粒度绑定，两级缓存优化性能
+- **按智能体可配置**：每个智能体均可绑定 MCP 工具，由 LLM 经 function calling 自主调用
+- 两级缓存优化性能
 
 ### Skills 技能系统
 
 - 4 个系统预设技能：`vision-enhancer`、`severity-enhancer`、`liability-enhancer`、`report-enhancer`
 - 用户可创建自定义 `SKILL.md` 技能，按智能体绑定
-- 技能在运行时注入到对应用户智能体的 system prompt 中
+- 技能在运行时注入到对应智能体的 system prompt 中
+
+### 批量账号管理
+
+- 访问 `/admin` 页面（隐藏路由，不在导航栏显示）
+- 粘贴用户名列表批量创建账号（支持 `username,password` 逐行或统一默认密码）
+- 查看所有用户、删除用户（连带清理其报告）
 
 ### 多语言支持
 
@@ -64,6 +81,7 @@ Vision Agent → Severity Agent + Liability Agent (并行) → Report Agent → 
 
 - 注册 / 登录（JWT，7 天有效期）
 - 报告按用户隔离
+- 工作空间文件服务支持 `?token=` query 参数（供 `<img>` 等标签鉴权）
 
 ## 快速开始
 
@@ -83,6 +101,8 @@ npm run dev
 
 打开 http://localhost:5173 ，注册账号后即可使用。
 
+批量创建账号：浏览器访问 `/admin`，粘贴用户名列表批量导入。
+
 ## 环境变量
 
 全部配置在 `server/.env`：
@@ -91,16 +111,17 @@ npm run dev
 |------|--------|------|
 | `PORT` | `28123` | 服务端口 |
 | `JWT_SECRET` | (开发默认值) | JWT 签名密钥，生产环境务必更换 |
-| `DATA_DIR` | `server/data` | 数据目录（数据库、上传、知识库、PDF、字体、技能） |
-| `QWEN_API_KEY` | — | 视觉模型 API Key |
+| `DATA_DIR` | `server/data` | 数据目录（数据库、上传、知识库、PDF、字体、技能、工作空间） |
+| `QWEN_API_KEY` | - | 视觉模型 API Key |
 | `QWEN_BASE_URL` | `https://api.siliconflow.cn/v1` | 视觉模型端点 |
-| `DEEPSEEK_API_KEY` | — | 推理模型 API Key |
+| `DEEPSEEK_API_KEY` | - | 推理模型 API Key |
 | `DEEPSEEK_BASE_URL` | `https://api.siliconflow.cn/v1` | 推理模型端点 |
-| `EMBEDDING_API_KEY` | — | 嵌入模型 API Key |
+| `EMBEDDING_API_KEY` | - | 嵌入模型 API Key |
 | `EMBEDDING_BASE_URL` | `https://api.siliconflow.cn/v1` | 嵌入模型端点 |
 | `EMBEDDING_DIM` | `4096` | 向量维度 |
 | `MCP_ENABLED` | `false` | 启用 MCP 工具（PDF 生成、逆地理编码等） |
-| `ALLOWED_ORIGINS` | — | CORS 白名单（逗号分隔，不设则允许所有） |
+| `AMAP_MCP_URL` | - | 高德地图 MCP URL（含 key）；留空则不播种高德预置连接 |
+| `ALLOWED_ORIGINS` | - | CORS 白名单（逗号分隔，不设则允许所有） |
 | `LOG_LEVEL` | `DEBUG` | 日志级别：DEBUG / INFO / WARN / ERROR |
 
 ## 脚本
@@ -135,12 +156,13 @@ SmartTrans/
 │   │   ├── knowledge/    # RAG 知识库源文件
 │   │   ├── skills/       # 技能 SKILL.md 文件
 │   │   ├── fonts/        # PDF 中文字体（思源黑体/宋体）
-│   │   ├── uploads/      # 上传图片
-│   │   └── pdfs/         # 生成的 PDF 报告
+│   │   ├── uploads/      # 上传图片（临时区，启动后移入工作空间）
+│   │   ├── pdfs/         # 生成的 PDF 报告（旧数据兼容）
+│   │   └── workspaces/   # 工作空间沙箱（<userId>/<runId>/）
 │   └── scripts/          # 测试脚本
 ├── web/
 │   └── src/
-│       ├── views/        # 7 个页面视图
+│       ├── views/        # 页面视图（分析/历史/知识库/技能/MCP/登录/注册/管理）
 │       ├── components/   # 可复用组件
 │       ├── composables/  # 组合式 API (分析流水线状态管理)
 │       ├── api/          # API 客户端 (fetch 封装 + SSE 流消费)
