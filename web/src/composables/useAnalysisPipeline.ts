@@ -34,7 +34,17 @@ export function useAnalysisPipeline() {
   const PRESET_IMAGE_URL = '/samples/accident-sample.jpg'
   const PRESET_IMAGE_NAME = 'accident-sample.jpg'
 
+  const MAX_IMAGES = 6
+
   async function loadPresetImage(): Promise<void> {
+    if (fileList.value.some((f) => f.name === PRESET_IMAGE_NAME)) {
+      ElMessage.info(t('analyze.presetAlready'))
+      return
+    }
+    if (fileList.value.length >= MAX_IMAGES) {
+      ElMessage.warning(t('analyze.maxImages'))
+      return
+    }
     presetLoading.value = true
     try {
       const res = await fetch(PRESET_IMAGE_URL)
@@ -44,13 +54,11 @@ export function useAnalysisPipeline() {
         type: blob.type || 'image/jpeg',
       }) as UploadRawFile
       file.uid = Date.now()
-      fileList.value = [
-        {
-          name: PRESET_IMAGE_NAME,
-          url: URL.createObjectURL(blob),
-          raw: file,
-        },
-      ]
+      fileList.value.push({
+        name: PRESET_IMAGE_NAME,
+        url: URL.createObjectURL(blob),
+        raw: file,
+      })
       ElMessage.success(t('analyze.presetLoaded'))
     } catch {
       ElMessage.error(t('analyze.presetLoadFailed'))

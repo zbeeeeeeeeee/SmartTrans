@@ -100,8 +100,8 @@ async function loadSkills() {
       listSkills(),
       getAgentSkillSettings(props.agentName),
     ])
-    // Only show globally enabled skills that belong to this agent
-    skills.value = allSkills.filter((s) => s.enabled && s.name.startsWith(props.agentName))
+    // Show all globally enabled skills (system + custom); switch controls per-agent binding
+    skills.value = allSkills.filter((s) => s.enabled)
     skillSettings.value = sets.filter((s) => skills.value.some((sk) => sk.id === s.skillId))
   } catch {
     ElMessage.error(t('settings.skillsLoadFail'))
@@ -193,6 +193,7 @@ watch(dialogVisible, (v) => {
           <div class="item-info">
             <div class="item-name">
               {{ skill.name }}
+              <el-tag v-if="skill.name.startsWith(agentName)" size="small" type="warning" effect="plain" class="sys-tag">{{ t('settings.recommended') }}</el-tag>
               <el-tag v-if="skill.isSystem" size="small" type="info" effect="plain" class="sys-tag">{{ t('skills.system') }}</el-tag>
             </div>
             <div class="item-desc">{{ skill.description }}</div>

@@ -28,6 +28,10 @@ export default {
     usePresetImage: '使用预置事故图片',
     presetLoaded: '预置图片已加载',
     presetLoadFailed: '预置图片加载失败',
+    presetAlready: '预置图片已添加',
+    maxImages: '最多上传 6 张图片',
+    emptyHint: '上传事故现场图片或使用预置图片开始分析',
+    selectImages: '选择图片',
   },
   agent: {
     vision: { label: '图像识别智能体' },
@@ -230,6 +234,7 @@ export default {
     noTools: '暂无工具',
     skills: 'Skills',
     skillsHint: '（仅显示已在技能管理中启用的 Skills）',
+    recommended: '推荐',
     noSkills: '暂无启用的 Skills',
     close: '关闭',
     mcpLoadFail: '加载 MCP 数据失败',

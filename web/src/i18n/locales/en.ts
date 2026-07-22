@@ -29,6 +29,10 @@ export default {
     usePresetImage: 'Use Preset Accident Image',
     presetLoaded: 'Preset image loaded',
     presetLoadFailed: 'Failed to load preset image',
+    presetAlready: 'Preset image already added',
+    maxImages: 'Up to 6 images allowed',
+    emptyHint: 'Upload scene images or use a preset image to start',
+    selectImages: 'Select Images',
   },
   agent: {
     vision: { label: 'Vision Agent' },
@@ -232,6 +236,7 @@ export default {
     noTools: 'No tools available',
     skills: 'Skills',
     skillsHint: '(Only showing Skills enabled in Skills Management)',
+    recommended: 'Recommended',
     noSkills: 'No enabled Skills',
     close: 'Close',
     mcpLoadFail: 'Failed to load MCP data',

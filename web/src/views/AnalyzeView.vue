@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, inject } from 'vue'
+import type { UploadInstance } from 'element-plus'
 import { useI18n } from 'vue-i18n'
 import { Plus, Refresh, Picture } from '@element-plus/icons-vue'
 import { useAnalysisPipeline } from '@/composables/useAnalysisPipeline'
@@ -26,6 +27,13 @@ const {
   loadPresetImage,
 } = useAnalysisPipeline()
 
+const uploadRef = ref<UploadInstance>()
+
+function triggerUpload(): void {
+  const root = (uploadRef.value as unknown as { $el?: HTMLElement })?.$el
+  root?.querySelector<HTMLInputElement>('input[type="file"]')?.click()
+}
+
 // Agent settings dialog state (MCP + Skills)
 const settingsDialogVisible = ref(false)
 const settingsDialogAgent = ref('')
@@ -46,24 +54,29 @@ function onConfigureAgent(agentKey: string) {
           <template #header>{{ t('analyze.infoEntry') }}</template>
           <el-form label-position="top">
             <el-form-item :label="t('analyze.images')">
+              <div v-if="fileList.length === 0" class="upload-empty" @click="triggerUpload">
+                <el-icon class="empty-icon"><Picture /></el-icon>
+                <p class="empty-hint">{{ t('analyze.emptyHint') }}</p>
+                <div class="empty-actions">
+                  <el-button type="primary" :icon="Plus" @click.stop="triggerUpload">
+                    {{ t('analyze.selectImages') }}
+                  </el-button>
+                  <el-button :icon="Picture" :loading="presetLoading" @click.stop="loadPresetImage">
+                    {{ t('analyze.usePresetImage') }}
+                  </el-button>
+                </div>
+              </div>
               <el-upload
+                ref="uploadRef"
                 v-model:file-list="fileList"
                 list-type="picture-card"
                 :auto-upload="false"
                 accept="image/*"
                 multiple
+                :class="{ 'hide-trigger': fileList.length === 0 }"
               >
                 <el-icon><Plus /></el-icon>
               </el-upload>
-              <el-button
-                class="preset-btn"
-                :icon="Picture"
-                :loading="presetLoading"
-                link
-                @click="loadPresetImage"
-              >
-                {{ t('analyze.usePresetImage') }}
-              </el-button>
             </el-form-item>
             <el-form-item :label="t('analyze.description')">
               <el-input
@@ -121,8 +134,37 @@ function onConfigureAgent(agentKey: string) {
   display: flex;
   gap: 10px;
 }
-.preset-btn {
-  margin-top: 8px;
+.upload-empty {
+  width: 100%;
+  border: 1px dashed var(--el-border-color);
+  border-radius: 8px;
+  padding: 28px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+.upload-empty:hover {
+  border-color: var(--el-color-primary);
+}
+.empty-icon {
+  font-size: 32px;
+  color: var(--el-text-color-placeholder);
+}
+.empty-hint {
+  margin: 0;
+  font-size: 13px;
+  color: var(--el-text-color-secondary);
+}
+.empty-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 4px;
+}
+.hide-trigger :deep(.el-upload--picture-card) {
+  display: none;
 }
 .err {
   margin-top: 16px;

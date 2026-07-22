@@ -28,6 +28,10 @@ export default {
     usePresetImage: '使用預置事故圖片',
     presetLoaded: '預置圖片已載入',
     presetLoadFailed: '預置圖片載入失敗',
+    presetAlready: '預置圖片已新增',
+    maxImages: '最多上傳 6 張圖片',
+    emptyHint: '上傳事故現場圖片或使用預置圖片開始分析',
+    selectImages: '選擇圖片',
   },
   agent: {
     vision: { label: '影像識別智能體' },
@@ -230,6 +234,7 @@ export default {
     noTools: '暫無工具',
     skills: 'Skills',
     skillsHint: '（僅顯示已在技能管理中啟用的 Skills）',
+    recommended: '推薦',
     noSkills: '暫無啟用的 Skills',
     close: '關閉',
     mcpLoadFail: '載入 MCP 資料失敗',
