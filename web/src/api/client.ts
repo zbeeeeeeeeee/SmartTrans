@@ -174,6 +174,51 @@ export async function downloadReportPdf(id: string): Promise<void> {
 }
 
 // ============================================================
+// Admin - User Management
+// ============================================================
+
+export interface UserListItem {
+  id: string
+  username: string
+  createdAt: string
+}
+
+export interface BatchRegisterResult {
+  created: { username: string; password: string }[]
+  skipped: { username: string; reason: string }[]
+}
+
+/** Batch create accounts */
+export async function batchRegister(users: { username: string; password: string }[]): Promise<BatchRegisterResult> {
+  const res = await fetch('/api/auth/batch-register', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ users }),
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: `HTTP ${res.status}` }))
+    throw new Error((err as { error?: string }).error ?? `HTTP ${res.status}`)
+  }
+  return res.json()
+}
+
+/** List all users */
+export async function listUsers(): Promise<UserListItem[]> {
+  const res = await fetch('/api/auth/users')
+  if (!res.ok) throw new Error(`HTTP ${res.status}`)
+  return res.json()
+}
+
+/** Delete a user */
+export async function deleteUser(id: string): Promise<void> {
+  const res = await fetch(`/api/auth/users/${id}`, { method: 'DELETE' })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: `HTTP ${res.status}` }))
+    throw new Error((err as { error?: string }).error ?? `HTTP ${res.status}`)
+  }
+}
+
+// ============================================================
 // Workspace
 // ============================================================
 
