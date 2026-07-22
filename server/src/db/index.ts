@@ -1,4 +1,5 @@
 import fs from 'node:fs'
+import path from 'node:path'
 import Database from 'better-sqlite3'
 import * as sqliteVec from 'sqlite-vec'
 import { createLogger } from '../utils/logger'
@@ -11,10 +12,12 @@ fs.mkdirSync(config.paths.knowledge, { recursive: true })
 fs.mkdirSync(config.paths.pdfs, { recursive: true })
 fs.mkdirSync(config.paths.fonts, { recursive: true })
 fs.mkdirSync(config.paths.skills, { recursive: true })
+fs.mkdirSync(config.paths.workspaces, { recursive: true })
 
-log.info(`打开数据库 — ${config.paths.db}`)
+log.info(`打开数据库 - ${config.paths.db}`)
 export const db = new Database(config.paths.db)
 db.pragma('journal_mode = WAL')
+db.pragma('busy_timeout = 5000')
 
 sqliteVec.load(db)
 log.info('sqlite-vec 已加载')
@@ -179,3 +182,23 @@ const skillCount = (db.prepare('SELECT COUNT(*) AS n FROM skills').get() as { n:
 const skillSettingsCount = (db.prepare('SELECT COUNT(*) AS n FROM agent_skill_settings').get() as { n: number }).n
 const userCount = (db.prepare('SELECT COUNT(*) AS n FROM users').get() as { n: number }).n
 log.info(`数据库就绪 — reports 表, users=${userCount}, kb_documents=${docCount}, kb_chunks=${chunkCount}, vec_kb_chunks=${vecCount}, mcp_connections=${mcpConnCount}, agent_mcp_settings=${mcpSettingsCount}, reports_with_pdf=${pdfCount}, skills=${skillCount}, agent_skill_settings=${skillSettingsCount}`)
+
+// 启动清理孤儿工作空间：删除无对应 reports 行的 workspaces/<userId>/<runId>/ 目录
+{
+  let cleaned = 0
+  for (const userDir of fs.readdirSync(config.paths.workspaces)) {
+    const userPath = path.join(config.paths.workspaces, userDir)
+    if (!fs.statSync(userPath).isDirectory()) continue
+    for (const runDir of fs.readdirSync(userPath)) {
+      const runPath = path.join(userPath, runDir)
+      if (!fs.statSync(runPath).isDirectory()) continue
+      const exists = (db.prepare('SELECT 1 AS ok FROM reports WHERE id = ? AND user_id = ?').get(runDir, userDir) as { ok?: number } | undefined)?.ok
+      if (!exists) {
+        fs.rmSync(runPath, { recursive: true, force: true })
+        cleaned++
+      }
+    }
+    if (fs.readdirSync(userPath).length === 0) fs.rmdirSync(userPath)
+  }
+  if (cleaned > 0) log.info(`清理孤儿工作空间 — ${cleaned} 个`)
+}

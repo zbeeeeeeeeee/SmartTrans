@@ -1,11 +1,18 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { workspaceFileUrl } from '@/api/client'
 import type { AccidentReportView } from '@/types'
 
-const props = defineProps<{ report: AccidentReportView; images?: string[] }>()
+const props = defineProps<{ report: AccidentReportView; images?: string[]; reportId?: string }>()
 
 const { t } = useI18n()
+
+const imageSrcList = computed(() =>
+  (props.images ?? []).map((img) =>
+    props.reportId ? workspaceFileUrl(props.reportId, img) : `/uploads/${img}`,
+  ),
+)
 
 const level = computed(() => {
   const map: Record<string, { text: string; type: 'success' | 'warning' | 'danger' | 'info' }> = {
@@ -28,10 +35,10 @@ const level = computed(() => {
 
     <div v-if="images && images.length" class="report-images">
       <el-image
-        v-for="img in images"
+        v-for="(img, i) in images"
         :key="img"
-        :src="`/uploads/${img}`"
-        :preview-src-list="images.map((i) => `/uploads/${i}`)"
+        :src="imageSrcList[i]"
+        :preview-src-list="imageSrcList"
         fit="cover"
         class="thumb"
       />

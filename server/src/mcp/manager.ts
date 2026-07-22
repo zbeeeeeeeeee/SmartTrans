@@ -255,10 +255,11 @@ class McpManager {
         if (!reportJson) throw new Error('Missing required argument: reportJson')
         const report = JSON.parse(reportJson)
         const language = (args.language as string) ?? 'en'
-        const pdfFilename = `report-${crypto.randomUUID()}.pdf`
-        const pdfPath = path.join(config.paths.pdfs, pdfFilename)
+        const outputDir = (args.outputDir as string) ?? config.paths.pdfs
+        const pdfFilename = 'report.pdf'
+        const pdfPath = path.join(outputDir, pdfFilename)
         await generatePdf(report, pdfPath, language as any)
-        return { pdfPath: `pdfs/${pdfFilename}`, filename: pdfFilename, success: true }
+        return { pdfPath: pdfFilename, filename: pdfFilename, success: true }
       }
     }
     throw new Error(`Unknown system tool: ${toolName}`)

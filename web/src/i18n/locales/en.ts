@@ -56,8 +56,14 @@ export default {
     time: 'Time',
     actions: 'Actions',
     view: 'View',
-    downloadPdf: 'Download PDF',
+    downloadPdf: 'PDF',
+    viewWorkspace: 'Workspace',
     reportTitle: 'Accident Analysis Report',
+  },
+  workspace: {
+    title: 'Workspace',
+    empty: 'Workspace is empty',
+    download: 'Download',
   },
   knowledge: {
     title: 'Knowledge Base (RAG)',

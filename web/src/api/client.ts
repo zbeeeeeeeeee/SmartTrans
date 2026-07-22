@@ -174,6 +174,33 @@ export async function downloadReportPdf(id: string): Promise<void> {
 }
 
 // ============================================================
+// Workspace
+// ============================================================
+
+export interface WorkspaceFile {
+  name: string
+  size: number
+  ext: string
+}
+
+export interface WorkspaceListing {
+  files: WorkspaceFile[]
+}
+
+/** List files in a report's workspace */
+export async function listWorkspace(reportId: string): Promise<WorkspaceFile[]> {
+  const res = await authGet(`/api/reports/${reportId}/workspace`)
+  return (res as WorkspaceListing).files
+}
+
+/** Build the URL to fetch a single workspace file (includes token for <img> auth) */
+export function workspaceFileUrl(reportId: string, filename: string): string {
+  const token = getToken()
+  const base = `/api/reports/${reportId}/workspace/${encodeURIComponent(filename)}`
+  return token ? `${base}?token=${encodeURIComponent(token)}` : base
+}
+
+// ============================================================
 // Knowledge Base
 // ============================================================
 

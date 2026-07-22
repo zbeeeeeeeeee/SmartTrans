@@ -1,4 +1,8 @@
+import crypto from 'node:crypto'
+import fs from 'node:fs/promises'
+import path from 'node:path'
 import { createLogger } from '../utils/logger'
+import { config } from '../config'
 import { insertReport, updateReportPdfPath } from '../db/reports.repo'
 import { analyzeLiability } from './liability.agent'
 import { generateReport } from './report.agent'
@@ -151,7 +155,7 @@ export interface SkillSelection {
 export async function* runPipeline(
   userId: string,
   images: Buffer[],
-  imagePaths: string[],
+  imageTempPaths: string[],
   description: string,
   language: SupportedLanguage = 'en',
   skillSelections?: SkillSelection[],
@@ -161,7 +165,23 @@ export async function* runPipeline(
   const labels = STEP_LABELS[language]
   log.info(`Pipeline started — images ${images.length}, language: ${language}, description: "${description.slice(0, 80)}", coords: "${coordinates ?? ''}", time: "${timestamp ?? ''}"`)
 
+  let workspaceDir: string | undefined
+  let runId: string
   try {
+    // 创建专属工作空间（沙箱）：workspaces/<userId>/<runId>/
+    runId = crypto.randomUUID()
+    workspaceDir = path.join(config.paths.workspaces, userId, runId)
+    const wsDir = workspaceDir
+    await fs.mkdir(wsDir, { recursive: true })
+    // 异步移入上传图片，不阻塞 event loop
+    const workspaceImagePaths = await Promise.all(
+      imageTempPaths.map(async (p) => {
+        const name = path.basename(p)
+        await fs.rename(p, path.join(wsDir, name))
+        return name
+    }),
+    )
+    log.info(`Workspace created — ${wsDir}, images moved: ${workspaceImagePaths.length}`)
     // Pre-fetch MCP tools - 并行获取每个 agent 各自绑定的工具
     const [visionTools, severityTools, liabilityTools, reportTools] = await Promise.all([
       mcpManager.getToolsForAgent('vision'),
@@ -253,14 +273,14 @@ export async function* runPipeline(
     log.info(`Stage complete: report — citedArticles=${report.citedArticles?.length ?? 0}`, report.citedArticles)
 
     // ---- Persist ----
-    const reportId = insertReport(userId, { description, imagePaths, scene, severity, liability, report })
+    const reportId = insertReport(userId, runId, { description, imagePaths: workspaceImagePaths, scene, severity, liability, report })
     log.info(`Report persisted, id=${reportId}, user=${userId}`)
 
     // ---- PDF generation (via MCP tool) ----
     if (pdfToolKey) {
       try {
         const pdfTool = agentTools.report[pdfToolKey]
-        const rawResult = await pdfTool.execute({ reportJson: JSON.stringify(report), language })
+        const rawResult = await pdfTool.execute({ reportJson: JSON.stringify(report), language, outputDir: wsDir })
         const result = normalizePdfResult(rawResult)
         if (result?.success !== false && result?.pdfPath) {
           updateReportPdfPath(reportId, userId, result.pdfPath)
@@ -277,6 +297,8 @@ export async function* runPipeline(
 
     yield { type: 'done', reportId, report }
   } catch (err) {
+    // 失败时清理沙箱，避免遗留垃圾
+    if (workspaceDir) { try { await fs.rm(workspaceDir, { recursive: true, force: true }) } catch { /* ignore */ } }
     const message = err instanceof Error ? err.message : String(err)
     log.error('Pipeline exception', message)
     yield { type: 'error', message }

@@ -55,8 +55,14 @@ export default {
     time: '時間',
     actions: '操作',
     view: '檢視',
-    downloadPdf: '下載PDF',
+    downloadPdf: 'PDF',
+    viewWorkspace: '工作空間',
     reportTitle: '事故分析報告',
+  },
+  workspace: {
+    title: '工作空間',
+    empty: '工作空間為空',
+    download: '下載',
   },
   knowledge: {
     title: '法規知識庫（RAG）',

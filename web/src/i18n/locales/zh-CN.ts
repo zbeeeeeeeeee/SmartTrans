@@ -55,8 +55,14 @@ export default {
     time: '时间',
     actions: '操作',
     view: '查看',
-    downloadPdf: '下载PDF',
+    downloadPdf: 'PDF',
+    viewWorkspace: '工作空间',
     reportTitle: '事故分析报告',
+  },
+  workspace: {
+    title: '工作空间',
+    empty: '工作空间为空',
+    download: '下载',
   },
   knowledge: {
     title: '法规知识库（RAG）',

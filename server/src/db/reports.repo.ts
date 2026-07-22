@@ -1,4 +1,3 @@
-import { randomUUID } from 'node:crypto'
 import { createLogger } from '../utils/logger'
 import { db } from './index'
 
@@ -69,8 +68,7 @@ function parseRow(row: ReportRow): ReportRecord {
   }
 }
 
-export function insertReport(userId: string, input: InsertReportInput): string {
-  const id = randomUUID()
+export function insertReport(userId: string, id: string, input: InsertReportInput): string {
   db.prepare(
     `INSERT INTO reports (id, user_id, description, image_paths, scene, severity, liability, report, created_at)
      VALUES (@id, @user_id, @description, @image_paths, @scene, @severity, @liability, @report, @created_at)`,
@@ -85,7 +83,7 @@ export function insertReport(userId: string, input: InsertReportInput): string {
     report: JSON.stringify(input.report),
     created_at: beijingNow(),
   })
-  log.info(`插入报告 — id=${id}, user=${userId}`)
+  log.info(`插入报告 - id=${id}, user=${userId}`)
   return id
 }
 

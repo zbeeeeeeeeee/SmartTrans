@@ -1,5 +1,4 @@
-import fs from 'node:fs'
-import path from 'node:path'
+import fsp from 'node:fs/promises'
 import { Router } from 'express'
 import { createLogger } from '../utils/logger'
 import { runPipeline, type SkillSelection } from '../agents/orchestrator'
@@ -17,8 +16,9 @@ router.post('/analyze', authRequired, upload.array('images', 6), async (req, res
   const description = typeof req.body?.description === 'string' ? req.body.description : ''
   const coordinates = typeof req.body?.coordinates === 'string' ? req.body.coordinates : ''
   const timestamp = typeof req.body?.timestamp === 'string' ? req.body.timestamp : ''
-  const images = files.map((f) => fs.readFileSync(f.path))
-  const imagePaths = files.map((f) => path.basename(f.path))
+  // Async image read (non-blocking for concurrency) + keep temp full paths for workspace move
+  const images = await Promise.all(files.map((f) => fsp.readFile(f.path)))
+  const imageTempPaths = files.map((f) => f.path)
 
   // Extract language from form field, default to English
   const rawLanguage = typeof req.body?.language === 'string' ? req.body.language : 'en'
@@ -48,7 +48,7 @@ router.post('/analyze', authRequired, upload.array('images', 6), async (req, res
 
   const send = (data: unknown) => res.write(`data: ${JSON.stringify(data)}\n\n`)
 
-  for await (const ev of runPipeline(req.userId!, images, imagePaths, description, language, skillSelections, coordinates, timestamp)) {
+  for await (const ev of runPipeline(req.userId!, images, imageTempPaths, description, language, skillSelections, coordinates, timestamp)) {
     if (ev.type === 'error') {
       log.error('Pipeline error', ev.message)
     }

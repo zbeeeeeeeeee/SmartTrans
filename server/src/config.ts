@@ -29,6 +29,7 @@ export const config = {
     pdfs: path.join(dataDir, 'pdfs'),
     fonts: path.join(dataDir, 'fonts'),
     skills: path.join(dataDir, 'skills'),
+    workspaces: path.join(dataDir, 'workspaces'),
     db: path.join(dataDir, 'app.db'),
   },
   vision: {

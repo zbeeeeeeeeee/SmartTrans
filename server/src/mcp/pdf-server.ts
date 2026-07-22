@@ -5,7 +5,6 @@
  * 由 manager.ts 以 `npx tsx src/mcp/pdf-server.ts` 方式作为子进程启动。
  */
 
-import crypto from 'node:crypto'
 import path from 'node:path'
 import * as readline from 'node:readline'
 import { config } from '../config'
@@ -104,6 +103,7 @@ rl.on('line', async (line: string) => {
           return
         }
         const language = (params.arguments?.language as string) ?? 'en'
+        const outputDir = (params.arguments?.outputDir as string) ?? config.paths.pdfs
 
         let report: Record<string, unknown>
         try {
@@ -118,15 +118,15 @@ rl.on('line', async (line: string) => {
           return
         }
 
-        const pdfFilename = `report-${crypto.randomUUID()}.pdf`
-        const pdfPath = path.join(config.paths.pdfs, pdfFilename)
+        const pdfFilename = 'report.pdf'
+        const pdfPath = path.join(outputDir, pdfFilename)
 
         try {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           await generatePdf(report as any, pdfPath, language as any)
 
           const result = {
-            pdfPath: `pdfs/${pdfFilename}`,
+            pdfPath: pdfFilename,
             filename: pdfFilename,
             success: true,
           }
