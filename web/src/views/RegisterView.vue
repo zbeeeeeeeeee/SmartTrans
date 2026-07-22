@@ -2,8 +2,10 @@
 import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import { useI18n } from 'vue-i18n'
 import { apiClient } from '@/api/client'
 
+const { t } = useI18n()
 const router = useRouter()
 const form = reactive({ username: '', password: '' })
 const loading = ref(false)
@@ -14,10 +16,10 @@ async function handleRegister() {
     const res = await apiClient('POST /api/auth/register', form)
     localStorage.setItem('accessToken', res.accessToken)
     localStorage.setItem('user', JSON.stringify(res.user))
-    ElMessage.success('注册成功')
+    ElMessage.success(t('auth.registerSuccess'))
     router.push('/')
   } catch (e: any) {
-    ElMessage.error(e.message || '注册失败')
+    ElMessage.error(e.message || t('auth.registerFail'))
   } finally {
     loading.value = false
   }
@@ -28,19 +30,19 @@ async function handleRegister() {
   <div class="auth-page">
     <el-card class="auth-card" shadow="never">
       <template #header>
-        <h2 style="margin:0;text-align:center">注册</h2>
+        <h2 style="margin:0;text-align:center">{{ t('auth.register') }}</h2>
       </template>
       <el-form label-position="top" @submit.prevent="handleRegister">
-        <el-form-item label="用户名">
-          <el-input v-model="form.username" placeholder="请输入用户名" />
+        <el-form-item :label="t('auth.username')">
+          <el-input v-model="form.username" :placeholder="t('auth.usernamePlaceholder')" />
         </el-form-item>
-        <el-form-item label="密码">
-          <el-input v-model="form.password" type="password" placeholder="至少6位" show-password />
+        <el-form-item :label="t('auth.password')">
+          <el-input v-model="form.password" type="password" :placeholder="t('auth.passwordHint')" show-password />
         </el-form-item>
-        <el-button type="primary" :loading="loading" native-type="submit" style="width:100%">注册</el-button>
+        <el-button type="primary" :loading="loading" native-type="submit" style="width:100%">{{ t('auth.register') }}</el-button>
       </el-form>
       <div style="text-align:center;margin-top:16px">
-        <router-link to="/login">已有账号？去登录</router-link>
+        <router-link to="/login">{{ t('auth.hasAccount') }}</router-link>
       </div>
     </el-card>
   </div>
