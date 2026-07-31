@@ -1,6 +1,6 @@
 % !TEX program = xelatex
 % SmartTrans User Guide — LaTeX Edition
-% Compile: xelatex -shell-escape USER-GUIDE.tex (twice for TOC)
+% Compile: xelatex -shell-escape USER-GUIDE.tex
 
 \documentclass[
   paper=a4,
@@ -38,24 +38,13 @@
 \setmonofont{DejaVu Sans Mono}
 \newfontfamily{\cjkfont}{FandolHei}
 
-% ── Colors (Element Plus palette) ─────────────────────────────
-\definecolor{primary}{HTML}{409EFF}
-\definecolor{success}{HTML}{67C23A}
-\definecolor{warning}{HTML}{E6A23C}
-\definecolor{danger}{HTML}{F56C6C}
-\definecolor{info}{HTML}{909399}
-
-\definecolor{insightbg}{HTML}{F0F7FF}
-\definecolor{insightborder}{HTML}{409EFF}
+% ── Colors ─────────────────────────────────────────────────────
 \definecolor{codebg}{HTML}{F5F7FA}
-\definecolor{tablehead}{HTML}{ECF5FF}
-
-\addtokomafont{section}{\color{primary}}
-\addtokomafont{subsection}{\color{primary!80!black}}
+\definecolor{imgborder}{HTML}{F1F3F5}
 
 % ── Environments & Commands ────────────────────────────────────
 \newtcolorbox{insightbox}{
-  colback=insightbg, colframe=insightborder,
+  colback=black!3, colframe=black!50,
   leftrule=4pt, rightrule=0pt, toprule=0pt, bottomrule=0pt,
   arc=0pt, outer arc=0pt,
   before skip=12pt, after skip=12pt,
@@ -64,7 +53,7 @@
 }
 
 \newtcolorbox{tipbox}{
-  colback=warning!8, colframe=warning!50,
+  colback=black!3, colframe=black!50,
   leftrule=3pt, rightrule=0pt, toprule=0pt, bottomrule=0pt,
   arc=2pt, outer arc=2pt,
   before skip=10pt, after skip=10pt,
@@ -83,12 +72,16 @@
 
 \newcommand{\code}[1]{\lstinline[basicstyle=\ttfamily\small,breaklines=false]|#1|}
 
-\newcommand{\eltaginfo}[1]{\tcbox[on line,size=small,colback=info!15,colframe=info,boxrule=0.5pt,arc=2pt,left=3pt,right=3pt,top=0.5pt,bottom=0.5pt]{\small\textcolor{info!80!black}{#1}}}
-\newcommand{\eltagwarning}[1]{\tcbox[on line,size=small,colback=warning!15,colframe=warning,boxrule=0.5pt,arc=2pt,left=3pt,right=3pt,top=0.5pt,bottom=0.5pt]{\small\textcolor{warning!80!black}{#1}}}
+\newcommand{\eltaginfo}[1]{\tcbox[on line,size=small,colback=black!10,colframe=black!50,boxrule=0.5pt,arc=2pt,left=3pt,right=3pt,top=0.5pt,bottom=0.5pt]{\small #1}}
+\newcommand{\eltagwarning}[1]{\tcbox[on line,size=small,colback=black!10,colframe=black!50,boxrule=0.5pt,arc=2pt,left=3pt,right=3pt,top=0.5pt,bottom=0.5pt]{\small #1}}
 
 \newcommand{\screenshot}[2][0.8\textwidth]{%
   \IfFileExists{../images/#2}{%
-    \begin{center}\includegraphics[width=#1,keepaspectratio]{../images/#2}\end{center}
+    \begin{center}%
+      \setlength{\fboxrule}{1pt}%
+      \setlength{\fboxsep}{0pt}%
+      \fcolorbox{imgborder}{white}{\includegraphics[width=#1,keepaspectratio]{../images/#2}}%
+    \end{center}%
   }{%
     \begin{center}\fbox{\parbox{0.6\textwidth}{\centering\small\ttfamily Image: #2}}\end{center}
   }%
@@ -106,25 +99,52 @@
 
 % ── Headers / Footers ─────────────────────────────────────────
 \fancyhf{}
-\fancyhead[L]{\small\color{info}\leftmark}
-\fancyhead[R]{\small\color{info}SmartTrans User Guide}
-\fancyfoot[C]{\small\color{info}\thepage\ / \pageref*{LastPage}}
+\fancyhead[L]{\small\leftmark}
+\fancyhead[R]{\small SmartTrans User Guide}
+\fancyfoot[C]{\small\thepage\ / \pageref*{LastPage}}
 \renewcommand{\headrulewidth}{0.4pt}
 \pagestyle{fancy}
 
 \setstretch{1.05}
 
+\RedeclareSectionCommand[
+  beforeskip=-0.5ex plus -0.2ex minus -0.1ex,
+  afterskip=0.3ex plus 0.1ex,
+]{section}
+\RedeclareSectionCommand[
+  beforeskip=-0.3ex plus -0.1ex minus -0.1ex,
+  afterskip=0.2ex plus 0.1ex,
+]{subsection}
+
 \title{SmartTrans User Guide}
-\subtitle{A demonstration platform that uses AI-powered traffic accident analysis\\
-to make five foundational concepts of enterprise AI tangible and experiential.}
+
 \date{\today}
 \author{}
 
 \begin{document}
 
 \maketitle
-\tableofcontents
-\newpage
+
+\begin{tcolorbox}[
+  colback=black!8, colframe=black!60,
+  leftrule=4pt, rightrule=0pt, toprule=0pt, bottomrule=0pt,
+  arc=0pt, outer arc=0pt,
+  before skip=12pt, after skip=16pt,
+  left=12pt, right=12pt, top=8pt, bottom=8pt,
+]
+  \textbf{Online Demo:}\par
+  The SmartTrans system is deployed and accessible at:\par
+  \medskip
+  \begin{center}
+    \large\url{http://1.95.119.213:28123/}
+  \end{center}
+  \smallskip
+  \small Open this address in your browser to follow along with every hands-on step in this guide. No local installation required.
+\end{tcolorbox}
+
+\begin{tipbox}
+  \textbf{Login credentials:} The system requires a logged-in account. Please refer to the \textbf{green sticky note on the laptop} for the username and password.
+\end{tipbox}
 
 % ── Executive Summary ─────────────────────────────────────────
 \section{Executive Summary}
@@ -134,7 +154,7 @@ SmartTrans illustrates five concepts that together define the modern AI agent st
 \medskip
 \begin{tabularx}{\textwidth}{@{} l L @{}}
 \toprule
-\rowcolor{tablehead}
+
 \textbf{Concept} & \textbf{The Question It Answers} \\
 \midrule
 \textbf{Prompt}  & How do you give an AI a professional identity — so it says the \emph{right} thing? \\
@@ -145,29 +165,6 @@ SmartTrans illustrates five concepts that together define the modern AI agent st
 \bottomrule
 \end{tabularx}
 \medskip
-
-These five form a capability stack: \textbf{Prompts} define identity → \textbf{Agents} wrap identity, knowledge, and tools → \textbf{RAG} provides authoritative knowledge → \textbf{MCP} delivers executable tools → \textbf{Skills} make expertise swappable.
-
-% ── Core Concepts at a Glance ──────────────────────────────────
-\section{Core Concepts at a Glance}
-
-{\small
-\begin{tabularx}{\textwidth}{@{} l L @{}}
-\toprule
-\rowcolor{tablehead}
-\textbf{Concept} & \textbf{One-Line Understanding} \\
-\midrule
-\textbf{Prompt}            & A ``professional contract'' — defines which path the AI \emph{should} take \\
-\textbf{Agent}             & Role + knowledge + tools = a digital specialist that completes tasks \\
-\textbf{Structured Output} & Verifiable, auditable data structures instead of free-form text \\
-\textbf{RAG}               & A reference library — look up facts rather than rely on training memory \\
-\textbf{Vector Embedding}  & Making semantics computable — turning meaning into measurable math \\
-\textbf{Tool Calling}      & AI autonomously decides when and which tool to invoke \\
-\textbf{MCP}               & A universal protocol for tool integration — one standard, any service \\
-\textbf{Skill}             & Modular expertise package — upgrade capabilities without code changes \\
-\bottomrule
-\end{tabularx}
-}
 
 % ── 1. Prompt ──────────────────────────────────────────────────
 \section{Prompt — The Professional Contract}
@@ -192,31 +189,7 @@ These five form a capability stack: \textbf{Prompts} define identity → \textbf
   \item Watch the pipeline execute in the right panel and wait for the report.
 \end{enumerate}
 
-\begin{tipbox}
-  \textbf{Tip:} The language switcher in the top-right corner lets you choose English, Simplified Chinese, or Traditional Chinese. The entire pipeline operates in your selected language.
-\end{tipbox}
-
 \screenshot{image-01.png}
-
-\subsection{The Multi-Agent Architecture}
-
-The system decomposes analysis into a relay of four \textbf{specialized agents}:
-
-\medskip
-\begin{tabularx}{\textwidth}{@{} c l L @{}}
-\toprule
-\rowcolor{tablehead}
-\textbf{Stage} & \textbf{Agent} & \textbf{Responsibility} \\
-\midrule
-① & Vision Agent    & Understand the visual information of the accident scene \\
-② & Severity Agent  & Assess accident severity level and damage risks \\
-③ & Liability Agent & Determine fault percentages and cite legal references \\
-④ & Report Agent    & Synthesize all analyses into a decision-support report \\
-\bottomrule
-\end{tabularx}
-\medskip
-
-Status indicators update in real time: \code{Waiting} → \code{Analyzing} → \code{Complete}. Output of one stage is input to the next.
 
 \subsection{Why Prompts Matter}
 
@@ -253,7 +226,7 @@ Every agent's output is a \textbf{rigorously constrained data structure} — not
 \medskip
 \begin{tabularx}{\textwidth}{@{} l l L @{}}
 \toprule
-\rowcolor{tablehead}
+
 \textbf{Element} & \textbf{Provided By} & \textbf{What It Does} \\
 \midrule
 \textbf{Role}      & Prompt            & Defines professional identity, scope, and methodology \\
@@ -271,7 +244,7 @@ An agent is a \textbf{digital specialist}: defined scope + reference materials +
 {\small
 \begin{tabularx}{\textwidth}{@{} l L L @{}}
 \toprule
-\rowcolor{tablehead}
+
 \textbf{Dimension} & \textbf{Chatbot} & \textbf{Agent} \\
 \midrule
 \textbf{Mode}          & Answers questions     & Completes tasks \\
@@ -293,7 +266,7 @@ A chatbot tells you what you \emph{should} do. An agent \emph{does} it.
 {\small
 \begin{tabularx}{\textwidth}{@{} l L L L @{}}
 \toprule
-\rowcolor{tablehead}
+
 \textbf{Agent} & \textbf{Model} & \textbf{Prompt Defines\ldots} & \textbf{Tools Include\ldots} \\
 \midrule
 \textbf{Vision Agent}    & Qwen3-VL (vision)      & How to observe accident scenes   & — (pure perception) \\
@@ -323,7 +296,7 @@ The pipeline is a \textbf{data relay}, not a conversation.
   \item Upload documents: Click \textbf{Add Document} → drag a \code{.md} or \code{.txt} file → click \textbf{Upload}.
 \end{enumerate}
 
-\screenshot[0.5\textwidth]{image-03.png}
+\screenshot[0.35\textwidth]{image-03.png}
 
 \begin{enumerate}[resume]
   \item Try \textbf{semantic search}: enter \code{rear-end collision liability determination} → click \textbf{Search}. Observe \textbf{distance scores} — they measure semantic closeness.
@@ -352,21 +325,10 @@ With a knowledge base: specific articles cited, verbatim text shown, relevance t
   \textbf{Core Insight:} RAG means your proprietary documents become the AI's source of truth — updatable, auditable, controlled by you.
 \end{insightbox}
 
-\subsection{Chunking and Vectorization}
-
-\begin{itemize}
-  \item \textbf{Chunking}: The system detects \textbf{Article X} markers and splits by article. Precise retrieval requires precise granularity.
-  \item \textbf{Vectorization}: Each unit → 4,096-dimensional vector. ``Rear-end collision'' and ``vehicle behind strikes rear of vehicle ahead'' are different in characters but close in vector space — vectors capture \emph{meaning}, not \emph{spelling}.
-\end{itemize}
-
 % ── 4. MCP ─────────────────────────────────────────────────────
 \section{MCP — From Advisor to Executor}
 
 \textbf{The core question}: Can an AI do more than ``talk'' — can it actually ``act''?
-
-\subsection{Prerequisites}
-
-MCP must be enabled server-side (\code{MCP\_ENABLED=true}). If the \textbf{MCP Settings} tab is not visible, contact the administrator.
 
 \subsection{Experience It}
 
@@ -410,7 +372,7 @@ MCP solves the N×M scaling problem (10 systems × 50 APIs = 500 custom integrat
 \medskip
 \begin{tabularx}{\textwidth}{@{} l L L @{}}
 \toprule
-\rowcolor{tablehead}
+
 \textbf{Type} & \textbf{Characteristics} & \textbf{Management} \\
 \midrule
 \textbf{System Connections} & Preset, non-deletable; platform-native capabilities & Platform maintains \\
@@ -435,7 +397,7 @@ Use \textbf{Add MCP Server} to connect external services — mapping, weather, d
 \medskip
 \begin{tabularx}{\textwidth}{@{} l l L @{}}
 \toprule
-\rowcolor{tablehead}
+
 \textbf{Skill} & \textbf{Default Agent} & \textbf{Purpose} \\
 \midrule
 \code{vision-enhancer}    & Vision    & Damage classification, road condition grading, weather/lighting analysis \\
@@ -511,28 +473,6 @@ Instructions:
 --- END SKILLS ---
 \end{minted}
 
-\subsection{Skills in the Capability Stack}
-
-\medskip
-\begin{tabularx}{\textwidth}{@{} l L L @{}}
-\toprule
-\rowcolor{tablehead}
-\textbf{Mechanism} & \textbf{Metaphor} & \textbf{What It Does} \\
-\midrule
-\textbf{Prompt}     & Job description  & Defines \emph{what kind of expert} the agent is \\
-\textbf{RAG}        & Reference library & \emph{What facts} the agent can look up \\
-\textbf{MCP / Tools} & Hands and instruments & \emph{What the agent can do} in the world \\
-\textbf{Skills}     & Training manual  & \emph{How the agent should think and operate} \\
-\bottomrule
-\end{tabularx}
-\medskip
-
-Skills are \textbf{operational know-how} — heuristics, methodologies, checklists. They decouple capability upgrades from code changes. A domain expert authors a \code{SKILL.md}; no deployment, no retraining, no pipeline reconfiguration.
-
-\begin{insightbox}
-  \textbf{Core Insight:} Prompts define \emph{what the agent is}. RAG provides \emph{what it can reference}. MCP enables \emph{what it can do}. Skills define \emph{how it thinks} — modular, swappable, authorable by domain experts.
-\end{insightbox}
-
 \subsection{The SKILL.md Format}
 
 \begin{minted}[bgcolor=codebg, fontsize=\small, breaklines, frame=single, framesep=8pt]{yaml}
@@ -561,7 +501,7 @@ The \code{name} is the unique identifier. The \code{description} appears in the 
 \small
 \begin{longtable}{@{} p{0.12\textwidth} p{0.17\textwidth} p{0.30\textwidth} p{0.33\textwidth} @{}}
 \toprule
-\rowcolor{tablehead}
+
 \textbf{Layer} & \textbf{Concept} & \textbf{The Leap} & \textbf{Business Impact} \\
 \midrule
 \endhead

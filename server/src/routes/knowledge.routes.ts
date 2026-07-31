@@ -1,10 +1,9 @@
 import fs from 'node:fs'
 import { Router } from 'express'
-import { embedMany } from 'ai'
 import { createLogger } from '../utils/logger'
-import { embeddingModel } from '../providers/index'
 import { uploadKnowledge } from '../middleware/upload'
 import { chunkText } from '../rag/chunk'
+import { embedChunks } from '../rag/embed'
 import { retrieveLegalContext } from '../rag/retriever'
 import { deleteDocument, insertChunk, insertDocument, knowledgeStats, listDocuments } from '../rag/store'
 
@@ -60,11 +59,7 @@ router.post('/documents', uploadKnowledge.single('file'), async (req, res) => {
     log.info(`POST /documents — 分块 ${chunks.length} 个, 开始嵌入...`)
 
     const docId = insertDocument(title, file.filename, 'upload')
-    const { embeddings } = await embedMany({
-      model: embeddingModel,
-      values: chunks.map((c) => c.content),
-      maxParallelCalls: 4,
-    })
+    const embeddings = await embedChunks(chunks.map((c) => c.content))
 
     chunks.forEach((c, i) => insertChunk(docId, c.content, c.articleNo, embeddings[i]))
 

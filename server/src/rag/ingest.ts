@@ -1,10 +1,9 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import { embedMany } from 'ai'
 import { createLogger } from '../utils/logger'
 import { config } from '../config'
-import { embeddingModel } from '../providers/index'
 import { chunkText } from './chunk'
+import { embedChunks } from './embed'
 import { clearKnowledge, insertChunk, insertDocument } from './store'
 
 const log = createLogger('rag:ingest')
@@ -35,11 +34,7 @@ async function main(): Promise<void> {
 
     const docId = insertDocument(path.parse(file).name, file, 'law')
     log.info(`${file}: 开始嵌入 ${chunks.length} 个分块...`)
-    const { embeddings } = await embedMany({
-      model: embeddingModel,
-      values: chunks.map((c) => c.content),
-      maxParallelCalls: 4,
-    })
+    const embeddings = await embedChunks(chunks.map((c) => c.content))
 
     chunks.forEach((c, i) => insertChunk(docId, c.content, c.articleNo, embeddings[i]))
     totalChunks += chunks.length
